@@ -1,0 +1,55 @@
+# Danh sách nguồn tin. Kiểm tra nguồn nào còn sống bằng:
+#   python -m pipeline.collect --check
+# Nguồn chết thì đặt enabled: false hoặc xóa đi.
+
+rss:
+  # --- Thời sự & kinh tế thế giới ---
+  - {name: BBC World, url: "https://feeds.bbci.co.uk/news/world/rss.xml", lang: en}
+  - {name: BBC Business, url: "https://feeds.bbci.co.uk/news/business/rss.xml", lang: en}
+  - {name: The Guardian World, url: "https://www.theguardian.com/world/rss", lang: en}
+  - {name: The Guardian Economics, url: "https://www.theguardian.com/business/economics/rss", lang: en}
+  - {name: Al Jazeera, url: "https://www.aljazeera.com/xml/rss/all.xml", lang: en}
+  - {name: CNBC World, url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", lang: en}
+  - {name: CNBC Economy, url: "https://www.cnbc.com/id/20910258/device/rss/rss.html", lang: en}
+  - {name: The Diplomat, url: "https://thediplomat.com/feed/", lang: en}
+  # --- Việt Nam ---
+  - {name: VnExpress Thế giới, url: "https://vnexpress.net/rss/the-gioi.rss", lang: vi}
+  - {name: VnExpress Kinh doanh, url: "https://vnexpress.net/rss/kinh-doanh.rss", lang: vi}
+  - {name: VnExpress Số hóa, url: "https://vnexpress.net/rss/so-hoa.rss", lang: vi}
+  - {name: CafeF Vĩ mô, url: "https://cafef.vn/vi-mo-dau-tu.rss", lang: vi}
+  - {name: CafeF Tài chính quốc tế, url: "https://cafef.vn/tai-chinh-quoc-te.rss", lang: vi}
+  - {name: CafeF Chứng khoán, url: "https://cafef.vn/thi-truong-chung-khoan.rss", lang: vi}
+  - {name: VnEconomy Tài chính, url: "https://vneconomy.vn/tai-chinh.rss", lang: vi}
+  - {name: VnEconomy Thế giới, url: "https://vneconomy.vn/the-gioi.rss", lang: vi}
+  # --- AI & công nghệ ---
+  - {name: TechCrunch AI, url: "https://techcrunch.com/category/artificial-intelligence/feed/", lang: en}
+  - {name: The Verge AI, url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", lang: en}
+  - {name: Ars Technica AI, url: "https://arstechnica.com/ai/feed/", lang: en}
+  - {name: MIT Technology Review, url: "https://www.technologyreview.com/feed/", lang: en}
+  - {name: Hugging Face Blog, url: "https://huggingface.co/blog/feed.xml", lang: en}
+  - {name: OpenAI News, url: "https://openai.com/news/rss.xml", lang: en}
+  - {name: Google DeepMind, url: "https://deepmind.google/blog/rss.xml", lang: en}
+  # --- AI trong y tế ---
+  - {name: STAT Health Tech, url: "https://www.statnews.com/category/health-tech/feed/", lang: en}
+
+# Google News: tìm theo từ khóa trong 1 ngày gần nhất. Miễn phí, bù cho phần tìm web bằng AI.
+google_news:
+  - {query: "AI healthcare", lang: en}
+  - {query: "AI diagnosis FDA", lang: en}
+  - {query: "trí tuệ nhân tạo y tế", lang: vi}
+  - {query: "Federal Reserve interest rates", lang: en}
+  - {query: "tariffs trade war", lang: en}
+  - {query: "South China Sea", lang: en}
+  - {query: "giá vàng", lang: vi}
+  - {query: "tỷ giá USD", lang: vi}
+  - {query: "VN-Index", lang: vi}
+
+hacker_news:
+  enabled: true
+  min_points: 150
+
+reddit:
+  - {sub: LocalLLaMA, min_score: 300}
+  - {sub: MachineLearning, min_score: 150}
+  - {sub: geopolitics, min_score: 300}
+  - {sub: economics, min_score: 500}

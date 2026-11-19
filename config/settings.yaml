@@ -1,0 +1,52 @@
+# Cấu hình chung. Đổi mô hình, ngưỡng điểm, ngân sách ở đây, không cần sửa mã.
+
+models:
+  classify: claude-haiku-5-5     # chấm điểm hàng trăm bài mỗi ngày
+  cluster: claude-haiku-5-5      # gộp bài trùng thành sự kiện
+  summarize: claude-haiku-5-5    # viết thẻ tin; đổi sang claude-sonnet-5-5 nếu muốn nhận định sâu hơn
+  digest: claude-sonnet-5-5      # bản tin tuần
+
+effort:                          # low | medium | high — càng cao càng kỹ và càng tốn
+  classify: low
+  cluster: low
+  summarize: medium
+  digest: high
+
+# Giá USD cho 1 triệu token (cập nhật 11/2026). Dùng để tự tính chi phí mỗi lượt.
+prices_per_million:
+  claude-haiku-5-5: {input: 0.10, output: 0.50}
+  claude-sonnet-5-5: {input: 2.00, output: 10.00}
+  claude-opus-5-5: {input: 4.00, output: 20.00}
+
+budget:
+  monthly_usd_limit: 9.0         # vượt mức này thì bỏ bước viết thẻ, chỉ chấm điểm
+
+scoring:
+  weights: {importance: 0.5, impact: 0.3, hotness: 0.2}
+  show_min: 5.0                  # dưới mức này không hiện trên trang
+  summarize_min: 7.0             # từ mức này trở lên mới viết thẻ đầy đủ
+  max_summaries_per_run: 15
+
+classify:
+  batch_size: 20
+  max_tokens: 8000
+
+cluster:
+  min_importance: 4              # bài dưới mức này không đem đi gộp
+  window_hours: 72               # chỉ so với sự kiện trong 72 giờ gần nhất
+  fuzzy_merge: 88                # độ giống tiêu đề (0–100) từ mức này thì gộp luôn, không hỏi AI
+  max_events_in_prompt: 80
+  batch_size: 40
+
+summarize:
+  max_sources: 4                 # số bài tối đa đưa vào để viết một thẻ
+  fetch_fulltext: 3              # số bài được bóc toàn văn (còn lại dùng mô tả RSS)
+  fulltext_chars: 3500
+  resummarize_after_hours: 20
+  resummarize_new_sources: 2
+
+collect:
+  max_age_hours: 36
+  per_source_limit: 30
+  timeout_seconds: 15
+  user_agent: "Mozilla/5.0 (compatible; tin-nong-ai/0.1; personal news reader)"

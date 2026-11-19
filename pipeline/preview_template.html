@@ -1,0 +1,248 @@
+<title>Bàn chấm tin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Bố cục: một cột đọc trên điện thoại; mỗi sự kiện là một thẻ, phiếu chấm nằm cuối thẻ. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --ink: #142033; --muted: #5b6678; --line: #dfe4ec;
+  --accent: #0b6e8a; --accent-soft: #e2f1f6;
+  --ai: #2f55c9; --ai-soft: #e7edfc; --world: #a2560b; --world-soft: #fbeedd;
+  --good: #1f7a4d; --good-soft: #e3f3ea; --bad: #b3362d; --bad-soft: #fbe6e4;
+  --font-display: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141c; --surface: #161d28; --ink: #e6ebf2; --muted: #98a3b4; --line: #273142;
+  --accent: #5cc3df; --accent-soft: #15303b;
+  --ai: #8ea9ff; --ai-soft: #1c2747; --world: #f0a858; --world-soft: #352612;
+  --good: #5fd39a; --good-soft: #13321f; --bad: #ff8a80; --bad-soft: #3a1a18; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0f141c; --surface: #161d28; --ink: #e6ebf2; --muted: #98a3b4; --line: #273142;
+  --accent: #5cc3df; --accent-soft: #15303b;
+  --ai: #8ea9ff; --ai-soft: #1c2747; --world: #f0a858; --world-soft: #352612;
+  --good: #5fd39a; --good-soft: #13321f; --bad: #ff8a80; --bad-soft: #3a1a18; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font: 700 1.6rem/1.2 var(--font-display); margin: 0; text-wrap: balance; }
+h2 { font: 600 1.12rem/1.35 var(--font-display); margin: 0; text-wrap: balance; }
+.meta { color: var(--muted); font-size: .88rem; }
+.head { display: grid; gap: 8px; }
+.progress { display: flex; align-items: center; gap: 10px; font-size: .88rem; color: var(--muted); }
+.bar { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.status { font-size: .85rem; color: var(--muted); }
+.status.warn { color: var(--bad); }
+.guide { background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; font-size: .9rem; }
+.guide b { font-weight: 600; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tabs button { font: 500 .86rem var(--font-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.tabs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.list { display: grid; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.card.rated { border-color: var(--accent); }
+.top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .8rem; }
+.chip { font-weight: 600; padding: 2px 8px; border-radius: 6px; letter-spacing: .02em; }
+.chip.ai_cong_nghe { background: var(--ai-soft); color: var(--ai); }
+.chip.thoi_su_kinh_te { background: var(--world-soft); color: var(--world); }
+.score { font: 500 .95rem var(--font-data); font-variant-numeric: tabular-nums; }
+.parts { font: 500 .74rem var(--font-data); color: var(--muted); font-variant-numeric: tabular-nums; }
+.goals { color: var(--muted); }
+ul.points { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+sup a { color: var(--accent); text-decoration: none; font: 500 .7rem var(--font-data); margin-left: 2px; }
+.label { font-weight: 600; }
+.why, .todo { margin: 0; }
+.disc { font-size: .8rem; color: var(--muted); font-style: italic; margin: 0; }
+.reason { margin: 0; color: var(--muted); font-size: .9rem; }
+details.src summary { cursor: pointer; color: var(--muted); font-size: .85rem; }
+details.src ol { margin: 6px 0 0; padding-left: 20px; font-size: .86rem; display: grid; gap: 4px; }
+details.src a { color: var(--accent); overflow-wrap: anywhere; }
+.rate { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.q { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .86rem; }
+.q > span { min-width: 88px; color: var(--muted); }
+.q button { font: 500 .84rem var(--font-body); border: 1px solid var(--line); background: transparent; color: var(--ink);
+  padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+.q button[aria-pressed="true"].yes { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+.q button[aria-pressed="true"].no { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); }
+.q button[aria-pressed="true"].mid { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.q button:disabled { opacity: .5; cursor: not-allowed; }
+.note { width: 100%; font: .86rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 7px 10px; box-sizing: border-box; }
+.saved { font-size: .78rem; color: var(--muted); min-height: 1em; }
+.empty { color: var(--muted); text-align: center; padding: 32px 0; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>Bàn chấm tin</h1>
+    <div class="meta" id="meta"></div>
+    <div class="progress"><span id="count">0/0 đã chấm</span><div class="bar"><i id="barfill"></i></div></div>
+    <div class="status" id="status">Đang nối kho phiếu chấm…</div>
+  </header>
+  <div class="guide">
+    Mỗi tin, bạn chấm <b>Đáng đọc</b> hay <b>Không đáng</b>, và điểm AI cho là <b>đúng</b>, <b>cao quá</b> hay <b>thấp quá</b>.
+    Thẻ có phần "Nên làm gì" thì chấm thêm phần đó có dùng được không. Bấm là tự lưu, không cần nút gửi.
+  </div>
+  <nav class="tabs" id="tabs" aria-label="Lọc tin"></nav>
+  <main class="list" id="list"></main>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function () {
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const CAT = { ai_cong_nghe: "AI & công nghệ", thoi_su_kinh_te: "Thời sự & kinh tế" };
+  const GOAL = { dau_tu: "Đầu tư", nghe_y: "Thu nhập nghề y nhờ AI", dia_chinh_tri: "Địa chính trị & kinh tế" };
+  const FILTERS = [["all", "Tất cả"], ["ai_cong_nghe", "AI & công nghệ"], ["thoi_su_kinh_te", "Thời sự & kinh tế"], ["todo", "Chưa chấm"]];
+  const ratings = {};      // key -> phiếu chấm đã lưu
+  const chains = {};       // key -> chuỗi ghi tuần tự (mỗi phiếu một lần ghi tại một thời điểm)
+  let db = null, filter = "all";
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+    }
+    kids.flat().forEach((c) => c != null && n.append(c));
+    return n;
+  };
+  const fmtTime = (iso) => { try { return new Date(iso).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }); } catch { return iso; } };
+
+  function setStatus(text, warn) { const s = $("status"); s.textContent = text; s.classList.toggle("warn", !!warn); }
+
+  function renderMeta() {
+    $("meta").textContent = `Lượt chạy ${fmtTime(DATA.generated_at)} · ${DATA.events.length} sự kiện từ ${DATA.show_min} điểm · ` +
+      `${DATA.events.filter((e) => e.card).length} thẻ đầy đủ · chi phí lượt ${DATA.run_cost_usd} USD`;
+    const done = DATA.events.filter((e) => ratings[e.key]?.worth).length;
+    $("count").textContent = `${done}/${DATA.events.length} đã chấm`;
+    $("barfill").style.width = DATA.events.length ? (100 * done / DATA.events.length) + "%" : "0";
+  }
+
+  function renderTabs() {
+    $("tabs").replaceChildren(...FILTERS.map(([k, label]) => {
+      const b = el("button", { type: "button", "aria-pressed": String(filter === k), text: label });
+      b.addEventListener("click", () => { filter = k; renderTabs(); renderList(); });
+      return b;
+    }));
+  }
+
+  function choice(e, field, options) {
+    const r = ratings[e.key] || {};
+    return options.map(([value, label, tone]) => {
+      const b = el("button", { type: "button", class: tone, "aria-pressed": String(r[field] === value), text: label });
+      if (!db) b.disabled = true;
+      b.addEventListener("click", () => { const cur = ratings[e.key] || {}; setRating(e, { ...cur, [field]: cur[field] === value ? null : value }); });
+      return b;
+    });
+  }
+
+  function rateBox(e) {
+    const r = ratings[e.key] || {};
+    const box = el("div", { class: "rate" },
+      el("div", { class: "q" }, el("span", { text: "Tin này" }),
+        choice(e, "worth", [["dang_doc", "Đáng đọc", "yes"], ["khong", "Không đáng", "no"]])),
+      el("div", { class: "q" }, el("span", { text: `Điểm ${e.score}/10` }),
+        choice(e, "score_judgement", [["dung", "Đúng", "yes"], ["cao", "Cao quá", "no"], ["thap", "Thấp quá", "mid"]])));
+    if (e.card) {
+      box.append(el("div", { class: "q" }, el("span", { text: "Nên làm gì" }),
+        choice(e, "action_ok", [["co", "Dùng được", "yes"], ["khong", "Sáo rỗng", "no"]])));
+    }
+    const note = el("input", { class: "note", id: "note-" + e.key, type: "text", placeholder: "Ghi chú cho AI (không bắt buộc)", maxlength: "300" });
+    note.value = r.note || "";
+    if (!db) note.disabled = true;
+    note.addEventListener("change", () => setRating(e, { ...(ratings[e.key] || {}), note: note.value.trim() }));
+    box.append(note, el("div", { class: "saved", id: "saved-" + e.key }));
+    return box;
+  }
+
+  function card(e) {
+    const c = e.card;
+    const top = el("div", { class: "top" },
+      el("span", { class: "chip " + e.category, text: CAT[e.category] || e.category }),
+      el("span", { class: "score", text: `${e.score}/10` }),
+      el("span", { class: "parts", text: `quan trọng ${e.importance} · ảnh hưởng ${e.impact} · độ nóng ${e.hotness}` }),
+      el("span", { class: "goals", text: `${e.source_count} nguồn` }));
+    const node = el("article", { class: "card" + (ratings[e.key]?.worth ? " rated" : ""), id: "card-" + e.key }, top);
+    if (c) {
+      node.append(el("h2", { text: c.title_vi }));
+      node.append(el("ul", { class: "points" }, c.key_points.map((kp) => {
+        const src = c.sources.find((s) => s.id === kp.source_id);
+        return el("li", {}, kp.text, src ? el("sup", {}, el("a", { href: src.url, target: "_blank", rel: "noopener", title: src.name, text: `[${src.id}]` })) : null);
+      })));
+      node.append(el("p", { class: "why" }, el("span", { class: "label", text: "Vì sao quan trọng với bạn: " }), c.why_it_matters));
+      node.append(el("p", { class: "todo" }, el("span", { class: "label", text: "Nên làm gì: " }), c.what_to_do));
+      if (c.affected_goals?.length) node.append(el("div", { class: "goals", text: "Ảnh hưởng: " + c.affected_goals.map((g) => GOAL[g] || g).join(", ") }));
+      if (c.disclaimer) node.append(el("p", { class: "disc", text: c.disclaimer }));
+    } else {
+      node.append(el("h2", { text: e.title }));
+      if (e.reason) node.append(el("p", { class: "reason", text: "AI chấm: " + e.reason }));
+    }
+    node.append(el("details", { class: "src" }, el("summary", { text: `Nguồn (${e.articles.length} bài)` }),
+      el("ol", {}, e.articles.map((a) => el("li", {}, el("a", { href: a.url, target: "_blank", rel: "noopener", text: a.title }), ` — ${a.source}`)))));
+    node.append(rateBox(e));
+    return node;
+  }
+
+  function renderList() {
+    // Giữ nguyên ô ghi chú đang gõ dở khi trang vẽ lại
+    const active = document.activeElement;
+    const typing = active && active.classList.contains("note") ? { id: active.id, value: active.value } : null;
+    const items = DATA.events.filter((e) =>
+      filter === "all" ? true : filter === "todo" ? !ratings[e.key]?.worth : e.category === filter);
+    $("list").replaceChildren(...(items.length ? items.map(card) : [el("p", { class: "empty", text: "Không còn tin nào trong mục này." })]));
+    if (typing) { const n = $(typing.id); if (n) { n.value = typing.value; n.focus(); } }
+    renderMeta();
+  }
+
+  function setRating(e, next) {
+    ratings[e.key] = next;
+    const saved = $("saved-" + e.key);
+    if (saved) saved.textContent = "Đang lưu…";
+    const body = {
+      key: e.key, event_id: e.id, run_at: DATA.generated_at,
+      worth: next.worth || null, score_judgement: next.score_judgement || null,
+      action_ok: next.action_ok || null, note: next.note || "",
+      // Chép kèm thông tin sự kiện để dựng bộ đề chuẩn mà không cần file SQLite
+      event: { title: e.title, title_vi: e.card?.title_vi || null, category: e.category, score: e.score,
+               importance: e.importance, impact: e.impact, hotness: e.hotness, source_count: e.source_count,
+               summary: e.summary || "", articles: e.articles.slice(0, 4) },
+      rated_at: new Date().toISOString(),
+    };
+    chains[e.key] = (chains[e.key] || Promise.resolve())
+      .then(() => db.doc("ratings/" + e.key).set(body))
+      .then(() => { const s = $("saved-" + e.key); if (s) s.textContent = "Đã lưu"; },
+            (err) => { const s = $("saved-" + e.key); if (s) s.textContent = "Chưa lưu được: " + (err?.code || "lỗi") + ". Bấm lại sau ít phút."; });
+    renderList();
+  }
+
+  renderTabs();
+  renderList();
+
+  (async () => {
+    try { db = await window.claude?.use?.("db"); } catch { db = null; }
+    if (!db) {
+      setStatus("Chế độ xem này không lưu được phiếu chấm. Hãy mở trang trên claude.ai khi đã đăng nhập.", true);
+      return;
+    }
+    setStatus("Đang tải phiếu chấm đã lưu…");
+    const timer = setTimeout(() => setStatus("Chưa tải được phiếu chấm cũ. Bạn vẫn chấm được, phiếu sẽ lưu khi kết nối lại.", true), 10000);
+    db.collection("ratings").onSnapshot((snap) => {
+      if (!snap.metadata.fromCache) { clearTimeout(timer); setStatus("Phiếu chấm tự lưu khi bạn bấm."); }
+      snap.docs.forEach((d) => {
+        if (chains[d.id]) return;  // phiếu đang ghi dở ở trang này thì giữ bản trên trang
+        const v = d.data();
+        ratings[d.id] = { worth: v.worth, score_judgement: v.score_judgement, action_ok: v.action_ok, note: v.note };
+      });
+      renderList();
+    }, (err) => { clearTimeout(timer); setStatus("Mất kết nối kho phiếu chấm (" + err.code + "). Tải lại trang để thử lại.", true); });
+  })();
+})();
+</script>
