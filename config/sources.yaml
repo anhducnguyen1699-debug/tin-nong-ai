@@ -9,8 +9,8 @@ rss:
   - {name: The Guardian World, url: "https://www.theguardian.com/world/rss", lang: en}
   - {name: The Guardian Economics, url: "https://www.theguardian.com/business/economics/rss", lang: en}
   - {name: Al Jazeera, url: "https://www.aljazeera.com/xml/rss/all.xml", lang: en}
-  - {name: CNBC World, url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", lang: en}
-  - {name: CNBC Economy, url: "https://www.cnbc.com/id/20910258/device/rss/rss.html", lang: en}
+  - {name: CNBC World, url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", lang: en, enabled: false}  # CNBC chặn đọc tự động (403)
+  - {name: CNBC Economy, url: "https://www.cnbc.com/id/20910258/device/rss/rss.html", lang: en, enabled: false}
   - {name: The Diplomat, url: "https://thediplomat.com/feed/", lang: en}
   # --- Việt Nam ---
   - {name: VnExpress Thế giới, url: "https://vnexpress.net/rss/the-gioi.rss", lang: vi}
@@ -48,8 +48,5 @@ hacker_news:
   enabled: true
   min_points: 150
 
-reddit:
-  - {sub: LocalLLaMA, min_score: 300}
-  - {sub: MachineLearning, min_score: 150}
-  - {sub: geopolitics, min_score: 300}
-  - {sub: economics, min_score: 500}
+# Reddit chặn đọc tự động (403) nên đã tắt.
+reddit: []
