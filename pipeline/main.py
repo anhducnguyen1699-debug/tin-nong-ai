@@ -16,7 +16,7 @@ from .classify import classify
 from .cluster import cluster
 from .collect import collect_all, make_client
 from .config import ROOT, load_settings, load_sources
-from .llm import LLM
+from .llm import LLM, HandLLM, HandoffPending
 from .models import CATEGORY_LABELS, GOAL_LABELS
 from .summarize import summarize
 
@@ -57,31 +57,36 @@ def run(args) -> int:
 
     conn = db.connect(db_path)
     run_id = db.start_run(conn)
-    llm = LLM(settings, conn, run_id)
+    llm = HandLLM(ROOT / "data" / "handoff") if args.hand else LLM(settings, conn, run_id)
     stats: dict = {}
     errors: list[str] = []
 
-    with make_client(settings) as http:
-        if not args.skip_collect:
-            items, report = collect_all(settings, sources)
-            stats["collected"] = len(items)
-            stats["new_articles"] = db.insert_articles(conn, items)
-            errors += [f"{name}: {s}" for name, s in report.items() if s.startswith("LỖI")]
-            print(f"Thu thập: {len(items)} bài, {stats['new_articles']} bài mới. "
-                  f"{sum(1 for s in report.values() if s.startswith('LỖI'))}/{len(report)} nguồn lỗi.")
+    try:
+      with make_client(settings) as http:
+          if not args.skip_collect:
+              items, report = collect_all(settings, sources)
+              stats["collected"] = len(items)
+              stats["new_articles"] = db.insert_articles(conn, items)
+              errors += [f"{name}: {s}" for name, s in report.items() if s.startswith("LỖI")]
+              print(f"Thu thập: {len(items)} bài, {stats['new_articles']} bài mới. "
+                    f"{sum(1 for s in report.values() if s.startswith('LỖI'))}/{len(report)} nguồn lỗi.")
 
-        rows = db.unscored_articles(conn, settings["collect"]["max_age_hours"], args.limit)
-        stats["scored"], errs = classify(conn, llm, settings, rows)
-        errors += errs
-        print(f"Chấm điểm: {stats['scored']}/{len(rows)} bài.")
+          rows = db.unscored_articles(conn, settings["collect"]["max_age_hours"], args.limit)
+          stats["scored"], errs = classify(conn, llm, settings, rows)
+          errors += errs
+          print(f"Chấm điểm: {stats['scored']}/{len(rows)} bài.")
 
-        stats["cluster"], errs = cluster(conn, llm, settings)
-        errors += errs
-        print(f"Gộp sự kiện: {stats['cluster']}")
+          stats["cluster"], errs = cluster(conn, llm, settings)
+          errors += errs
+          print(f"Gộp sự kiện: {stats['cluster']}")
 
-        stats["cards"], errs = summarize(conn, llm, settings, http)
-        errors += errs
-        print(f"Viết thẻ: {stats['cards']} thẻ.")
+          stats["cards"], errs = summarize(conn, llm, settings, http)
+          errors += errs
+          print(f"Viết thẻ: {stats['cards']} thẻ.")
+
+    except HandoffPending as e:
+        print(f"\nĐANG CHỜ câu trả lời viết tay cho: {e}")
+        return 3
 
     stats.update({"input_tokens": llm.input_tokens, "output_tokens": llm.output_tokens,
                   "cost_usd": round(llm.run_cost, 4)})
@@ -109,6 +114,7 @@ def main(argv=None) -> int:
     p.add_argument("--limit", type=int, default=None, help="Chỉ chấm tối đa N bài mới nhất")
     p.add_argument("--db", default=str(DEFAULT_DB), help="Đường dẫn file SQLite")
     p.add_argument("--skip-collect", action="store_true", help="Không thu thập, chỉ xử lý bài đã có")
+    p.add_argument("--hand", action="store_true", help="Chạy thử không tốn API: câu trả lời AI do Claude viết tay")
     p.add_argument("--preview", default=None, help="Xuất trang xem thử HTML ra đường dẫn này")
     return run(p.parse_args(argv))
 

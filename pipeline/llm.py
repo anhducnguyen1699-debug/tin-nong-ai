@@ -71,3 +71,30 @@ class LLM:
         if response.parsed_output is None:
             raise LLMError(f"Không đọc được JSON ở bước {step}")
         return response.parsed_output
+
+
+class HandoffPending(Exception):
+    """Bước này đang chờ câu trả lời viết tay."""
+
+
+class HandLLM:
+    """Chạy thử không tốn API: ghi đề bài ra file, đọc câu trả lời viết tay, kiểm theo đúng khuôn JSON."""
+
+    def __init__(self, folder):
+        from pathlib import Path
+        self.folder = Path(folder)
+        self.folder.mkdir(parents=True, exist_ok=True)
+        self.run_cost = 0.0
+        self.input_tokens = 0
+        self.output_tokens = 0
+
+    def parse(self, step, system, user, output_format, max_tokens):
+        import hashlib, json
+        name = f"{step}-{hashlib.sha1(user.encode()).hexdigest()[:8]}"
+        answer = self.folder / f"{name}.answer.json"
+        if answer.exists():
+            return output_format.model_validate_json(answer.read_text(encoding="utf-8"))
+        (self.folder / f"{name}.json").write_text(json.dumps(
+            {"step": step, "schema": output_format.model_json_schema(), "system": system, "user": user},
+            ensure_ascii=False, indent=1), encoding="utf-8")
+        raise HandoffPending(str(self.folder / f"{name}.json"))
