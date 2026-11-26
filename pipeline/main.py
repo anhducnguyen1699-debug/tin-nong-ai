@@ -46,6 +46,11 @@ def print_cards(conn, settings: dict, limit: int = 10) -> None:
 
 def run(args) -> int:
     settings, sources = load_settings(), load_sources()
+    if args.days > 1:
+        settings["collect"]["max_age_hours"] = 24 * args.days
+        settings["collect"]["gnews_window"] = f"{args.days}d"
+        settings["collect"]["per_source_limit"] = 100
+        settings["cluster"]["window_hours"] = 24 * args.days
     db_path = Path(args.db)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if args.dry_run:
@@ -114,6 +119,7 @@ def main(argv=None) -> int:
     p.add_argument("--limit", type=int, default=None, help="Chỉ chấm tối đa N bài mới nhất")
     p.add_argument("--db", default=str(DEFAULT_DB), help="Đường dẫn file SQLite")
     p.add_argument("--skip-collect", action="store_true", help="Không thu thập, chỉ xử lý bài đã có")
+    p.add_argument("--days", type=int, default=1, help="Lấy tin của N ngày gần nhất (mặc định 1)")
     p.add_argument("--hand", action="store_true", help="Chạy thử không tốn API: câu trả lời AI do Claude viết tay")
     p.add_argument("--preview", default=None, help="Xuất trang xem thử HTML ra đường dẫn này")
     return run(p.parse_args(argv))

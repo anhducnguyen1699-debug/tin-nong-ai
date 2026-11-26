@@ -103,9 +103,9 @@ def parse_rss(content: bytes, source: dict, max_age_hours: int, limit: int) -> l
     return out
 
 
-def google_news_url(query: str, lang: str) -> str:
+def google_news_url(query: str, lang: str, window: str = "1d") -> str:
     locale = GOOGLE_NEWS_LOCALES.get(lang, GOOGLE_NEWS_LOCALES["en"])
-    return f"https://news.google.com/rss/search?q={quote_plus(query + ' when:1d')}&{locale}"
+    return f"https://news.google.com/rss/search?q={quote_plus(query + f' when:{window}')}&{locale}"
 
 
 def parse_google_news(content: bytes, query: dict, max_age_hours: int, limit: int) -> list[Article]:
@@ -176,7 +176,7 @@ def make_client(settings: dict) -> httpx.Client:
     )
 
 
-def build_jobs(sources: dict) -> list[dict]:
+def build_jobs(sources: dict, window: str = "1d") -> list[dict]:
     """Mỗi việc = một đường dẫn cần tải + cách đọc nó. Hacker News và Reddit xếp trước để giữ điểm nóng."""
     jobs = []
     hn = sources.get("hacker_news") or {}
@@ -189,9 +189,12 @@ def build_jobs(sources: dict) -> list[dict]:
     for src in sources.get("rss") or []:
         if src.get("enabled", True):
             jobs.append({"kind": "rss", "name": src["name"], "url": src["url"], "cfg": src})
-    for q in sources.get("google_news") or []:
+    queries = list(sources.get("google_news") or [])
+    if window != "1d":
+        queries += sources.get("google_news_week") or []
+    for q in queries:
         jobs.append({"kind": "gnews", "name": f"Google News: {q['query']}",
-                     "url": google_news_url(q["query"], q.get("lang", "en")), "cfg": q})
+                     "url": google_news_url(q["query"], q.get("lang", "en"), window), "cfg": q})
     return jobs
 
 
@@ -210,7 +213,7 @@ def run_job(client: httpx.Client, job: dict, settings: dict) -> list[Article]:
 
 def collect_all(settings: dict, sources: dict) -> tuple[list[tuple[str, Article]], dict]:
     """Tải mọi nguồn song song. Trả về (danh sách bài đã lọc trùng, báo cáo từng nguồn)."""
-    jobs = build_jobs(sources)
+    jobs = build_jobs(sources, settings["collect"].get("gnews_window", "1d"))
     report: dict[str, str] = {}
     results: list[list[Article]] = [[] for _ in jobs]
     with make_client(settings) as client, ThreadPoolExecutor(max_workers=8) as pool:

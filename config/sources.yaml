@@ -50,3 +50,14 @@ hacker_news:
 
 # Reddit chặn đọc tự động (403) nên đã tắt.
 reddit: []
+
+# Từ khóa thêm khi quét cả tuần (--days 7)
+google_news_week:
+  - {query: "OpenAI", lang: en}
+  - {query: "Anthropic Claude", lang: en}
+  - {query: "Gemini AI", lang: en}
+  - {query: "Nvidia", lang: en}
+  - {query: "oil prices", lang: en}
+  - {query: "Ukraine Russia", lang: en}
+  - {query: "China economy", lang: en}
+  - {query: "lãi suất ngân hàng", lang: vi}
