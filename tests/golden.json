@@ -558,5 +558,21 @@
   "score_judgement": "thap",
   "action_ok": "co",
   "note": ""
+ },
+ {
+  "key": "e1-20261127T045227",
+  "title": "Thuế mới của ông Trump thêm thử thách thương mại Mỹ - Trung",
+  "title_vi": "Mỹ đề xuất thuế mới với 14 đối tác vì dư thừa công suất, Trung Quốc chịu 20%",
+  "source": "VnExpress Kinh doanh",
+  "summary": "Washington và Bắc Kinh khả năng không muốn tái khởi động thương chiến, nhưng đợt thuế mới có thể đẩy các nền kinh tế khác vào thế khó.",
+  "category": "thoi_su_kinh_te",
+  "hotness": 10,
+  "ai_score": 8.7,
+  "ai_importance": 8,
+  "ai_impact": 9,
+  "user_worth": true,
+  "score_judgement": "dung",
+  "action_ok": "co",
+  "note": ""
  }
 ]
