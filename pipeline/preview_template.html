@@ -73,6 +73,18 @@ details.more > div { display: grid; gap: 8px; padding-top: 8px; }
 .note { width: 100%; font: .86rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
   border-radius: 8px; padding: 7px 10px; box-sizing: border-box; }
 .saved-msg { font-size: .78rem; color: var(--muted); }
+details.article { border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+details.article > summary { padding: 10px 12px; color: var(--accent); font: 600 .9rem var(--font-body); list-style-position: inside; }
+details.article[open] > summary { border-bottom: 1px solid var(--line); }
+.art { padding: 4px 14px 14px; display: grid; gap: 10px; }
+.art .sapo { font-weight: 500; margin: 8px 0 0; }
+.art h3 { font: 600 1rem/1.35 var(--font-display); margin: 8px 0 0; }
+.art p, .art ul { margin: 0; }
+.art ul { padding-left: 18px; display: grid; gap: 4px; }
+.art .cite { color: var(--accent); text-decoration: none; font: 500 .72rem var(--font-data); vertical-align: super; margin-left: 1px; }
+.art ol.srcs { margin: 0; padding-left: 20px; font-size: .84rem; display: grid; gap: 6px; }
+.art ol.srcs a { color: var(--accent); overflow-wrap: anywhere; }
+.art .tag { font: 500 .7rem var(--font-data); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
 .empty { color: var(--muted); text-align: center; padding: 32px 0; }
 button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
@@ -108,7 +120,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
     for (const [k, v] of Object.entries(attrs)) {
       if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
     }
-    kids.flat().forEach((c) => c != null && n.append(c));
+    kids.flat(Infinity).forEach((c) => c != null && n.append(c));
     return n;
   };
   const fmt = (iso, opts) => { try { return new Date(iso).toLocaleString("vi-VN", opts); } catch { return iso; } };
@@ -143,6 +155,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       key, id: r.event_id, category: r.event?.category, score: r.event?.score, importance: r.event?.importance,
       impact: r.event?.impact, hotness: r.event?.hotness, source_count: r.event?.source_count,
       title: r.event?.title_vi || r.event?.title || "(không rõ tiêu đề)", card: r.event?.card || null,
+      article: r.event?.article || null,
       reason: "", summary: r.event?.summary || "", articles: r.event?.articles || [], fromEarlier: r.run_at,
     });
   }
@@ -181,6 +194,46 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       el("span", { class: "saved-msg", id: "msg-" + e.key }), more);
   }
 
+  // [n] trong câu thành đường dẫn tới nguồn số n
+  function withCites(line, sources) {
+    const byId = new Map((sources || []).map((s) => [s.id, s]));
+    const out = [];
+    let last = 0;
+    for (const m of line.matchAll(/\[(\d+)\]/g)) {
+      out.push(line.slice(last, m.index));
+      const s = byId.get(Number(m[1]));
+      out.push(s ? el("a", { class: "cite", href: s.url, target: "_blank", rel: "noopener", title: s.name, text: `[${m[1]}]` }) : m[0]);
+      last = m.index + m[0].length;
+    }
+    out.push(line.slice(last));
+    return out;
+  }
+
+  // Thân bài: đoạn văn cách nhau dòng trống, các dòng bắt đầu bằng "- " thành danh sách
+  function richText(text, sources) {
+    return text.split(/\n\s*\n/).map((block) => {
+      const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length && lines.every((l) => l.startsWith("- "))) {
+        return el("ul", {}, lines.map((l) => el("li", {}, withCites(l.slice(2), sources))));
+      }
+      return el("p", {}, withCites(lines.join(" "), sources));
+    });
+  }
+
+  function articleBox(a) {
+    return el("details", { class: "article" },
+      el("summary", { text: `Đọc bài phân tích (${a.words} từ · ${a.sources.length} nguồn)` }),
+      el("div", { class: "art" },
+        el("p", { class: "sapo" }, withCites(a.sapo, a.sources)),
+        a.sections.map((s) => [el("h3", { text: s.heading }), richText(s.body, a.sources)]),
+        el("h3", { text: "Nguồn" }),
+        el("ol", { class: "srcs" }, a.sources.map((s) => el("li", { value: String(s.id) },
+          el("a", { href: s.url, target: "_blank", rel: "noopener", text: s.name }),
+          el("span", { class: "tag", text: s.kind === "goc" ? "nguồn gốc" : "báo" }),
+          el("span", { class: "tag", text: s.full ? "đọc toàn văn" : "chỉ tiêu đề" }),
+          s.note ? ` ${s.note}` : null)))));
+  }
+
   function card(e) {
     const c = e.card;
     const node = el("article", { class: "card" + (ratings[e.key]?.worth === "khong" ? " skipped" : ""), id: "card-" + e.key },
@@ -200,6 +253,10 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       node.append(el("p", { class: "todo" }, el("span", { class: "label", text: "Nên làm gì: " }), c.what_to_do));
       if (c.affected_goals?.length) node.append(el("div", { class: "goals", text: "Ảnh hưởng: " + c.affected_goals.map((g) => GOAL[g] || g).join(", ") }));
       if (c.disclaimer) node.append(el("p", { class: "disc", text: c.disclaimer }));
+      if (e.article) node.append(articleBox(e.article));
+    } else if (e.article) {
+      node.append(el("h2", { text: e.article.title }));
+      node.append(articleBox(e.article));
     } else {
       node.append(el("h2", { text: e.title }));
       if (e.reason) node.append(el("p", { class: "reason", text: "AI chấm: " + e.reason }));
@@ -236,7 +293,8 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       // Ảnh chụp sự kiện: để dựng bộ đề chuẩn và hiện lại tin đã lưu sau khi bản tin đổi ngày
       event: r.event || { title: e.title, title_vi: e.card?.title_vi || null, category: e.category, score: e.score,
                importance: e.importance, impact: e.impact, hotness: e.hotness, source_count: e.source_count,
-               summary: e.summary || "", articles: (e.articles || []).slice(0, 4), card: e.card || null },
+               summary: e.summary || "", articles: (e.articles || []).slice(0, 4), card: e.card || null,
+               article: e.article || null },
       rated_at: new Date().toISOString(),
     };
     ratings[e.key].event = body.event;

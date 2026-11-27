@@ -37,6 +37,7 @@ def build_data(conn, settings: dict, since_hours: int = 24, byline: str = "") ->
             "reason": top["reason"] if top else "",
             "summary": (top["summary"] or "")[:400] if top else "",
             "card": json.loads(e["card_json"]) if e["card_json"] else None,
+            "article": json.loads(e["article_json"]) if e["article_json"] else None,
             "articles": [{"source": a["source"], "title": a["title"], "url": a["url"]} for a in arts[:8]],
         })
     last_run = conn.execute("SELECT stats_json FROM runs WHERE finished_at IS NOT NULL ORDER BY id DESC LIMIT 1").fetchone()

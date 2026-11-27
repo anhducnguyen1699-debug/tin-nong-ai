@@ -45,6 +45,31 @@ Lưu ý:
 - **Viết thẻ:** chỉ dựa vào nguồn được đưa. "Nên làm gì" luôn phải có việc cụ thể (mốc ngày, chỉ số, tài liệu); không bao giờ chỉ viết "chỉ cần nắm thông tin". Không khuyên mua bán mã cụ thể.
 - Nếu `answer` báo sai khuôn thì sửa và gửi lại. Không sửa mã nguồn trong lượt chạy hằng ngày.
 
+## 3b. Viết bài phân tích sâu cho tin từ 7 điểm
+Đọc kỹ `pipeline/prompts/deep.md` trước. Sau đó:
+```bash
+.venv/bin/python -m pipeline.deep list
+```
+Làm lần lượt từng sự kiện, điểm cao trước:
+1. Đọc toàn văn từng bài báo bằng WebFetch. Đường dẫn `news.google.com` thì dùng WebSearch tìm bài gốc theo tiêu đề cộng tên báo.
+2. Tìm thêm 1–3 nguồn gốc bằng WebSearch: thông cáo, văn bản, nghiên cứu, số liệu chính thức.
+3. Viết bài theo khuôn, rồi ghi:
+   ```bash
+   .venv/bin/python -m pipeline.deep write <mã> <<'EOF'
+   ...bài...
+   EOF
+   ```
+   Lệnh báo `CHƯA LƯU` thì sửa theo lỗi rồi ghi lại.
+
+Mạng chỉ mở cho một số trang. Ngoài các trang RSS, hiện đọc được toàn văn ở: `www.reuters.com`, `apnews.com`, `www.axios.com`, `www.npr.org`, `www.federalreserve.gov`, `www.newyorkfed.org`, `www.bls.gov`, `www.bea.gov`, `ustr.gov`, `www.fda.gov`, `pubmed.ncbi.nlm.nih.gov`, `www.nejm.org`, `jamanetwork.com`, `www.nature.com`, `tuoitre.vn`, `thanhnien.vn`, `vietnamnet.vn`, `baochinhphu.vn`, `www.sbv.gov.vn`, `moit.gov.vn`.
+- Trang bị chặn: tìm bài khác đưa cùng tin trên các trang mở được.
+- Sự kiện nào thử hết mà vẫn chưa đủ 3 nguồn đọc toàn văn thì **bỏ qua**, không viết từ tóm tắt tìm kiếm, và ghi tên sự kiện đó vào báo cáo.
+
+Làm xong mọi sự kiện thì xuất lại trang:
+```bash
+.venv/bin/python -m pipeline.deep render
+```
+
 ## 4. Đăng trang
 Trước hết dùng `Artifact` với `action: "read"` và `url` của trang đọc tin (bắt buộc trước khi đăng vào trang có sẵn). Sau đó dùng `Artifact` để đăng: `file_path: "/home/user/tin-nong-ai/out/preview.html"`, `url` của trang đọc tin. **Không** truyền `capabilities` (để giữ kho phản hồi) và không truyền `icon`.
 
@@ -57,4 +82,8 @@ git push origin main
 ```
 
 ## 6. Báo cáo
-Viết báo cáo bằng tiếng Việt, dưới 100 từ, gồm: số bài thu thập, số bài đã chấm, số sự kiện, số thẻ, 3 tin lớn nhất, và các lỗi nếu có.
+Viết báo cáo bằng tiếng Việt, dưới 120 từ, gồm:
+- số bài thu thập, số bài đã chấm, số sự kiện, số thẻ;
+- số bài phân tích đã viết, tổng số nguồn đã đọc toàn văn, các sự kiện bị bỏ qua vì không đọc được nguồn;
+- 3 tin lớn nhất;
+- các lỗi nếu có.

@@ -91,11 +91,24 @@ def iso(dt: datetime | None) -> str | None:
     return dt.astimezone(timezone.utc).isoformat(timespec="seconds") if dt else None
 
 
+MIGRATIONS = {
+    # cột thêm sau khi đã có dữ liệu thật: (bảng, cột, kiểu)
+    ("events", "article_json", "TEXT"),
+    ("events", "article_at", "TEXT"),
+    ("events", "article_source_count", "INTEGER DEFAULT 0"),
+}
+
+
 def connect(path: str | Path) -> sqlite3.Connection:
     conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    for table, column, kind in MIGRATIONS:
+        existing = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in existing:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {kind}")
+    conn.commit()
     return conn
 
 
@@ -230,6 +243,28 @@ def save_card(conn, event_id: int, card: dict, source_count: int) -> None:
     conn.execute(
         "UPDATE events SET title_vi=?, card_json=?, card_at=?, card_source_count=? WHERE id=?",
         (card.get("title_vi"), json.dumps(card, ensure_ascii=False), iso(now_utc()), source_count, event_id),
+    )
+    conn.commit()
+
+
+def events_needing_article(conn, min_score: float, since_hours: int, rewrite_after_hours: int,
+                           new_sources: int, limit: int) -> list[sqlite3.Row]:
+    """Sự kiện trong bản tin hôm nay, đủ điểm, chưa có bài phân tích (hoặc có thêm nguồn mới từ lâu)."""
+    since = iso(now_utc() - timedelta(hours=since_hours))
+    cutoff = iso(now_utc() - timedelta(hours=rewrite_after_hours))
+    return conn.execute(
+        """SELECT * FROM events WHERE score >= ? AND last_updated >= ? AND (
+               article_json IS NULL
+               OR (article_at < ? AND source_count - COALESCE(article_source_count, 0) >= ?)
+           ) ORDER BY score DESC LIMIT ?""",
+        (min_score, since, cutoff, new_sources, limit),
+    ).fetchall()
+
+
+def save_article(conn, event_id: int, article: dict, source_count: int) -> None:
+    conn.execute(
+        "UPDATE events SET article_json=?, article_at=?, article_source_count=? WHERE id=?",
+        (json.dumps(article, ensure_ascii=False), iso(now_utc()), source_count, event_id),
     )
     conn.commit()
 

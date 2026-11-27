@@ -50,3 +50,14 @@ collect:
   per_source_limit: 30
   timeout_seconds: 15
   user_agent: "Mozilla/5.0 (compatible; tin-nong-ai/0.1; personal news reader)"
+
+deep:                            # bài phân tích sâu do Claude trong phiên viết (đọc toàn văn nguồn bằng WebSearch/WebFetch)
+  min_score: 7.0                 # tin từ mức này trở lên được viết bài
+  target_words: 1000
+  min_words: 700
+  max_words: 1400
+  min_full_sources: 3            # ít nhất 3 nguồn được đọc toàn văn
+  max_quote_words: 25            # trích dẫn nguyên văn tối đa 25 từ mỗi lần
+  max_per_run: 12                # chặn trên phòng ngày quá nhiều tin; tin điểm cao làm trước
+  rewrite_after_hours: 20
+  rewrite_new_sources: 2
