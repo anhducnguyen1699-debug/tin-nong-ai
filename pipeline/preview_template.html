@@ -195,14 +195,19 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
   }
 
   // [n] trong câu thành đường dẫn tới nguồn số n
+  // **chữ đậm** thành <strong>; [n] thành đường dẫn tới nguồn số n. Dựng bằng phần tử DOM, không chèn HTML thô.
   function withCites(line, sources) {
     const byId = new Map((sources || []).map((s) => [s.id, s]));
     const out = [];
     let last = 0;
-    for (const m of line.matchAll(/\[(\d+)\]/g)) {
+    for (const m of line.matchAll(/\*\*([^*]+)\*\*|\[(\d+)\]/g)) {
       out.push(line.slice(last, m.index));
-      const s = byId.get(Number(m[1]));
-      out.push(s ? el("a", { class: "cite", href: s.url, target: "_blank", rel: "noopener", title: s.name, text: `[${m[1]}]` }) : m[0]);
+      if (m[1] !== undefined) {
+        out.push(el("strong", {}, withCites(m[1], sources)));
+      } else {
+        const s = byId.get(Number(m[2]));
+        out.push(s ? el("a", { class: "cite", href: s.url, target: "_blank", rel: "noopener", title: s.name, text: `[${m[2]}]` }) : m[0]);
+      }
       last = m.index + m[0].length;
     }
     out.push(line.slice(last));
