@@ -128,6 +128,28 @@ def unscored_articles(conn, max_age_hours: int, limit: int | None = None) -> lis
     return conn.execute(sql, params).fetchall()
 
 
+def skip_unsampled(conn, max_age_hours: int, keep: int) -> int:
+    """Giữ lại tối đa `keep` bài chưa chấm để đem đi chấm, lấy đều theo nguồn (mỗi nguồn lần lượt một bài,
+    bài mới trước; Hacker News xếp đầu vì có điểm nóng). Bài còn lại đánh dấu 'bo_mau' để không chấm lại.
+    Trả về số bài bị bỏ."""
+    rows = unscored_articles(conn, max_age_hours)
+    if len(rows) <= keep:
+        return 0
+    queues: dict[str, list[int]] = {}
+    for r in sorted(rows, key=lambda r: r["origin"] != "hacker_news"):
+        queues.setdefault(r["source"], []).append(r["id"])
+    picked: list[int] = []
+    while len(picked) < keep and any(queues.values()):
+        for q in queues.values():
+            if q and len(picked) < keep:
+                picked.append(q.pop(0))
+    skipped = [r["id"] for r in rows if r["id"] not in set(picked)]
+    now = iso(now_utc())
+    conn.executemany("UPDATE articles SET scored_at=?, reason='bo_mau' WHERE id=?", [(now, i) for i in skipped])
+    conn.commit()
+    return len(skipped)
+
+
 def save_scores(conn, scores: dict[int, dict]) -> None:
     now = iso(now_utc())
     conn.executemany(

@@ -15,6 +15,15 @@ Thu thập (RSS, Google News, Hacker News, Reddit)
   → Xuất trang "Bàn chấm tin"
 ```
 
+## Cách chạy hiện tại: Claude làm phần AI (không gọi API)
+Mỗi sáng lúc 6h12 (giờ Việt Nam), một phiên Claude tự động làm theo [docs/chay-ban-tin.md](docs/chay-ban-tin.md):
+- nạp phản hồi Hữu ích/Bỏ qua từ trang đọc tin;
+- thu thập tin, lấy mẫu 300 bài đều theo nguồn;
+- tự chấm điểm, gộp sự kiện, viết thẻ qua `python -m pipeline.hand`;
+- đăng trang "Bản tin nóng" và lưu `data/tin.db` vào kho.
+
+Phần gọi API (Haiku 5.5) vẫn giữ nguyên trong mã. Khi muốn làm trang công khai thì đặt `ANTHROPIC_API_KEY` rồi chạy `python -m pipeline.main` như bên dưới.
+
 ## Cài đặt lần đầu
 ```bash
 python3 -m venv .venv

@@ -97,4 +97,5 @@ class HandLLM:
         (self.folder / f"{name}.json").write_text(json.dumps(
             {"step": step, "schema": output_format.model_json_schema(), "system": system, "user": user},
             ensure_ascii=False, indent=1), encoding="utf-8")
+        (self.folder / "CURRENT").write_text(name, encoding="utf-8")  # để `python -m pipeline.hand` biết đề nào đang chờ
         raise HandoffPending(str(self.folder / f"{name}.json"))

@@ -20,7 +20,11 @@ GOLDEN = ROOT / "tests" / "golden.json"
 
 
 def load_export(path: Path) -> list[dict]:
-    raw = json.loads(path.read_text(encoding="utf-8"))
+    """Đọc phiếu từ một file JSON (danh sách phiếu) hoặc một thư mục chứa mỗi phiếu một file .json."""
+    if path.is_dir():
+        raw = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(path.glob("*.json"))]
+    else:
+        raw = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(raw, dict):
         raw = raw.get("documents") or raw.get("docs") or list(raw.values())
     out = []
@@ -86,7 +90,7 @@ def import_ratings(ratings: list[dict], conn=None) -> tuple[int, int]:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="Nhập phiếu chấm từ trang Bàn chấm tin")
-    p.add_argument("export", help="File JSON xuất từ kho phiếu chấm")
+    p.add_argument("export", help="File JSON hoặc thư mục phiếu xuất từ kho phiếu chấm")
     p.add_argument("--db", default=str(DEFAULT_DB))
     args = p.parse_args(argv)
     ratings = load_export(Path(args.export))

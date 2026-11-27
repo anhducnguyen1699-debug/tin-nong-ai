@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .env
 data/*.db
+!data/tin.db
 data/*.db-journal
 out/
 data/handoff/

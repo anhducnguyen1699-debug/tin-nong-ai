@@ -51,6 +51,10 @@ def run(args) -> int:
         settings["collect"]["gnews_window"] = f"{args.days}d"
         settings["collect"]["per_source_limit"] = 100
         settings["cluster"]["window_hours"] = 24 * args.days
+    if args.hand:
+        # Claude chấm tay đọc được lô lớn, ít lượt qua lại hơn
+        settings["classify"]["batch_size"] = 50
+        settings["cluster"]["batch_size"] = 60
     db_path = Path(args.db)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     if args.dry_run:
@@ -76,6 +80,10 @@ def run(args) -> int:
               print(f"Thu thập: {len(items)} bài, {stats['new_articles']} bài mới. "
                     f"{sum(1 for s in report.values() if s.startswith('LỖI'))}/{len(report)} nguồn lỗi.")
 
+          if args.sample:
+              skipped = db.skip_unsampled(conn, settings["collect"]["max_age_hours"], args.sample)
+              if skipped:
+                  print(f"Lấy mẫu: giữ {args.sample} bài đều theo nguồn, bỏ {skipped} bài.")
           rows = db.unscored_articles(conn, settings["collect"]["max_age_hours"], args.limit)
           stats["scored"], errs = classify(conn, llm, settings, rows)
           errors += errs
@@ -108,7 +116,9 @@ def run(args) -> int:
 
     if args.preview:
         from .preview import write_preview
-        out = write_preview(conn, settings, Path(args.preview))
+        byline = ("Claude chấm điểm và viết thẻ trong phiên (không gọi API)." if args.hand
+                  else f"Chấm điểm và viết thẻ bằng {settings['models']['summarize']}.")
+        out = write_preview(conn, settings, Path(args.preview), byline=byline)
         print(f"\nTrang xem thử: {out}")
     return 0
 
@@ -120,7 +130,8 @@ def main(argv=None) -> int:
     p.add_argument("--db", default=str(DEFAULT_DB), help="Đường dẫn file SQLite")
     p.add_argument("--skip-collect", action="store_true", help="Không thu thập, chỉ xử lý bài đã có")
     p.add_argument("--days", type=int, default=1, help="Lấy tin của N ngày gần nhất (mặc định 1)")
-    p.add_argument("--hand", action="store_true", help="Chạy thử không tốn API: câu trả lời AI do Claude viết tay")
+    p.add_argument("--hand", action="store_true", help="Không gọi API: câu trả lời AI do Claude trong phiên viết (xem pipeline/hand.py)")
+    p.add_argument("--sample", type=int, default=None, help="Chỉ chấm tối đa N bài, lấy đều theo nguồn; số còn lại bỏ qua")
     p.add_argument("--preview", default=None, help="Xuất trang xem thử HTML ra đường dẫn này")
     return run(p.parse_args(argv))
 

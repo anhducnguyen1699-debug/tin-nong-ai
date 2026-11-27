@@ -1,9 +1,9 @@
-<title>Bàn chấm tin</title>
+<title>Bản tin nóng</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Bố cục: một cột đọc trên điện thoại; mỗi sự kiện là một thẻ, phiếu chấm nằm cuối thẻ. */
+/* Bố cục: một cột đọc trên điện thoại; mỗi sự kiện là một thẻ, nút phản hồi ở cuối thẻ. */
 :root {
   --bg: #f3f5f8; --surface: #ffffff; --ink: #142033; --muted: #5b6678; --line: #dfe4ec;
   --accent: #0b6e8a; --accent-soft: #e2f1f6;
@@ -27,25 +27,21 @@
 body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--font-body); }
 .wrap { max-width: 720px; margin: 0 auto; padding-block: 20px 48px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  display: grid; gap: 16px; }
+  display: grid; gap: 14px; }
 h1 { font: 700 1.6rem/1.2 var(--font-display); margin: 0; text-wrap: balance; }
 h2 { font: 600 1.12rem/1.35 var(--font-display); margin: 0; text-wrap: balance; }
+.head { display: grid; gap: 6px; }
 .meta { color: var(--muted); font-size: .88rem; }
-.head { display: grid; gap: 8px; }
-.progress { display: flex; align-items: center; gap: 10px; font-size: .88rem; color: var(--muted); }
-.bar { flex: 1; height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
-.status { font-size: .85rem; color: var(--muted); }
+.stale { background: var(--bad-soft); color: var(--bad); border-radius: 10px; padding: 10px 14px; font-size: .9rem; }
+.status { font-size: .82rem; color: var(--muted); }
 .status.warn { color: var(--bad); }
-.guide { background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; font-size: .9rem; }
-.guide b { font-weight: 600; }
 .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
 .tabs button { font: 500 .86rem var(--font-body); border: 1px solid var(--line); background: var(--surface); color: var(--ink);
   padding: 6px 12px; border-radius: 999px; cursor: pointer; }
 .tabs button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .list { display: grid; gap: 14px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; min-width: 0; }
-.card.rated { border-color: var(--accent); }
+.card.skipped { opacity: .6; }
 .top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: .8rem; }
 .chip { font-weight: 600; padding: 2px 8px; border-radius: 6px; letter-spacing: .02em; }
 .chip.ai_cong_nghe { background: var(--ai-soft); color: var(--ai); }
@@ -59,37 +55,36 @@ sup a { color: var(--accent); text-decoration: none; font: 500 .7rem var(--font-
 .why, .todo { margin: 0; }
 .disc { font-size: .8rem; color: var(--muted); font-style: italic; margin: 0; }
 .reason { margin: 0; color: var(--muted); font-size: .9rem; }
-details.src summary { cursor: pointer; color: var(--muted); font-size: .85rem; }
+details summary { cursor: pointer; color: var(--muted); font-size: .85rem; }
 details.src ol { margin: 6px 0 0; padding-left: 20px; font-size: .86rem; display: grid; gap: 4px; }
 details.src a { color: var(--accent); overflow-wrap: anywhere; }
-.rate { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 8px; }
+.actions { border-top: 1px dashed var(--line); padding-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.actions .spacer { flex: 1; }
+.btn { font: 500 .84rem var(--font-body); border: 1px solid var(--line); background: transparent; color: var(--ink);
+  padding: 5px 11px; border-radius: 8px; cursor: pointer; }
+.btn[aria-pressed="true"].yes { background: var(--good-soft); color: var(--good); border-color: var(--good); }
+.btn[aria-pressed="true"].no { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); }
+.btn[aria-pressed="true"].mid { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+details.more { width: 100%; }
+details.more > div { display: grid; gap: 8px; padding-top: 8px; }
 .q { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .86rem; }
 .q > span { min-width: 88px; color: var(--muted); }
-.q button { font: 500 .84rem var(--font-body); border: 1px solid var(--line); background: transparent; color: var(--ink);
-  padding: 5px 10px; border-radius: 8px; cursor: pointer; }
-.q button[aria-pressed="true"].yes { background: var(--good-soft); color: var(--good); border-color: var(--good); }
-.q button[aria-pressed="true"].no { background: var(--bad-soft); color: var(--bad); border-color: var(--bad); }
-.q button[aria-pressed="true"].mid { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
-.q button:disabled { opacity: .5; cursor: not-allowed; }
 .note { width: 100%; font: .86rem var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line);
   border-radius: 8px; padding: 7px 10px; box-sizing: border-box; }
-.saved { font-size: .78rem; color: var(--muted); min-height: 1em; }
+.saved-msg { font-size: .78rem; color: var(--muted); }
 .empty { color: var(--muted); text-align: center; padding: 32px 0; }
 button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
 </style>
 
 <div class="wrap">
   <header class="head">
-    <h1>Bàn chấm tin</h1>
+    <h1>Bản tin nóng</h1>
     <div class="meta" id="meta"></div>
-    <div class="progress"><span id="count">0/0 đã chấm</span><div class="bar"><i id="barfill"></i></div></div>
-    <div class="status" id="status">Đang nối kho phiếu chấm…</div>
+    <div class="meta" id="byline"></div>
+    <div class="status" id="status">Đang nối kho phản hồi…</div>
   </header>
-  <div class="guide">
-    Mỗi tin, bạn chấm <b>Đáng đọc</b> hay <b>Không đáng</b>, và điểm AI cho là <b>đúng</b>, <b>cao quá</b> hay <b>thấp quá</b>.
-    Thẻ có phần "Nên làm gì" thì chấm thêm phần đó có dùng được không. Bấm là tự lưu, không cần nút gửi.
-  </div>
+  <div class="stale" id="stale" hidden></div>
   <nav class="tabs" id="tabs" aria-label="Lọc tin"></nav>
   <main class="list" id="list"></main>
 </div>
@@ -100,9 +95,11 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
   const DATA = JSON.parse(document.getElementById("data").textContent);
   const CAT = { ai_cong_nghe: "AI & công nghệ", thoi_su_kinh_te: "Thời sự & kinh tế" };
   const GOAL = { dau_tu: "Đầu tư", nghe_y: "Thu nhập nghề y nhờ AI", dia_chinh_tri: "Địa chính trị & kinh tế" };
-  const FILTERS = [["all", "Tất cả"], ["ai_cong_nghe", "AI & công nghệ"], ["thoi_su_kinh_te", "Thời sự & kinh tế"], ["todo", "Chưa chấm"]];
-  const ratings = {};      // key -> phiếu chấm đã lưu
-  const chains = {};       // key -> chuỗi ghi tuần tự (mỗi phiếu một lần ghi tại một thời điểm)
+  const FILTERS = [["all", "Tất cả"], ["ai_cong_nghe", "AI & công nghệ"], ["thoi_su_kinh_te", "Thời sự & kinh tế"],
+                   ["saved", "Đã lưu"], ["todo", "Chưa phản hồi"]];
+  const STALE_HOURS = 30;  // chạy mỗi sáng: quá 30 giờ chưa có lượt mới là có vấn đề
+  const ratings = {};      // key -> phản hồi đã lưu (kèm ảnh chụp sự kiện)
+  const chains = {};       // key -> chuỗi ghi tuần tự cho từng phiếu
   let db = null, filter = "all";
 
   const $ = (id) => document.getElementById(id);
@@ -114,67 +111,89 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
     kids.flat().forEach((c) => c != null && n.append(c));
     return n;
   };
-  const fmtTime = (iso) => { try { return new Date(iso).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }); } catch { return iso; } };
+  const fmt = (iso, opts) => { try { return new Date(iso).toLocaleString("vi-VN", opts); } catch { return iso; } };
 
   function setStatus(text, warn) { const s = $("status"); s.textContent = text; s.classList.toggle("warn", !!warn); }
 
-  function renderMeta() {
-    $("meta").textContent = `Lượt chạy ${fmtTime(DATA.generated_at)} · ${DATA.events.length} sự kiện từ ${DATA.show_min} điểm · ` +
-      `${DATA.events.filter((e) => e.card).length} thẻ đầy đủ · chi phí lượt ${DATA.run_cost_usd} USD`;
-    const done = DATA.events.filter((e) => ratings[e.key]?.worth).length;
-    $("count").textContent = `${done}/${DATA.events.length} đã chấm`;
-    $("barfill").style.width = DATA.events.length ? (100 * done / DATA.events.length) + "%" : "0";
+  function renderHead() {
+    const day = fmt(DATA.generated_at, { weekday: "long", day: "2-digit", month: "2-digit" });
+    const time = fmt(DATA.generated_at, { hour: "2-digit", minute: "2-digit" });
+    $("meta").textContent = `Bản tin ${day}, cập nhật ${time} · ${DATA.events.length} sự kiện · ` +
+      `${DATA.events.filter((e) => e.card).length} thẻ đầy đủ`;
+    $("byline").textContent = DATA.byline || "";
+    const age = (Date.now() - new Date(DATA.generated_at).getTime()) / 3.6e6;
+    const stale = $("stale");
+    stale.hidden = !(age > STALE_HOURS);
+    stale.textContent = `Bản tin đã cũ: lượt gần nhất chạy cách đây ${Math.round(age)} giờ. Lượt sáng nay có thể đã lỗi.`;
   }
 
   function renderTabs() {
     $("tabs").replaceChildren(...FILTERS.map(([k, label]) => {
-      const b = el("button", { type: "button", "aria-pressed": String(filter === k), text: label });
+      const n = k === "saved" ? savedEvents().length : null;
+      const b = el("button", { type: "button", "aria-pressed": String(filter === k), text: n ? `${label} (${n})` : label });
       b.addEventListener("click", () => { filter = k; renderTabs(); renderList(); });
       return b;
     }));
   }
 
-  function choice(e, field, options) {
-    const r = ratings[e.key] || {};
-    return options.map(([value, label, tone]) => {
-      const b = el("button", { type: "button", class: tone, "aria-pressed": String(r[field] === value), text: label });
-      if (!db) b.disabled = true;
-      b.addEventListener("click", () => { const cur = ratings[e.key] || {}; setRating(e, { ...cur, [field]: cur[field] === value ? null : value }); });
-      return b;
+  // Tin đã lưu: tin hôm nay có đánh dấu Lưu, cộng tin lưu từ các ngày trước (dựng lại từ ảnh chụp trong phiếu)
+  function savedEvents() {
+    const today = new Map(DATA.events.map((e) => [e.key, e]));
+    return Object.entries(ratings).filter(([, r]) => r.saved).map(([key, r]) => today.get(key) || {
+      key, id: r.event_id, category: r.event?.category, score: r.event?.score, importance: r.event?.importance,
+      impact: r.event?.impact, hotness: r.event?.hotness, source_count: r.event?.source_count,
+      title: r.event?.title_vi || r.event?.title || "(không rõ tiêu đề)", card: r.event?.card || null,
+      reason: "", summary: r.event?.summary || "", articles: r.event?.articles || [], fromEarlier: r.run_at,
     });
   }
 
-  function rateBox(e) {
+  function toggle(e, field, value, label, tone) {
     const r = ratings[e.key] || {};
-    const box = el("div", { class: "rate" },
-      el("div", { class: "q" }, el("span", { text: "Tin này" }),
-        choice(e, "worth", [["dang_doc", "Đáng đọc", "yes"], ["khong", "Không đáng", "no"]])),
-      el("div", { class: "q" }, el("span", { text: `Điểm ${e.score}/10` }),
-        choice(e, "score_judgement", [["dung", "Đúng", "yes"], ["cao", "Cao quá", "no"], ["thap", "Thấp quá", "mid"]])));
-    if (e.card) {
-      box.append(el("div", { class: "q" }, el("span", { text: "Nên làm gì" }),
-        choice(e, "action_ok", [["co", "Dùng được", "yes"], ["khong", "Sáo rỗng", "no"]])));
-    }
-    const note = el("input", { class: "note", id: "note-" + e.key, type: "text", placeholder: "Ghi chú cho AI (không bắt buộc)", maxlength: "300" });
-    note.value = r.note || "";
-    if (!db) note.disabled = true;
-    note.addEventListener("change", () => setRating(e, { ...(ratings[e.key] || {}), note: note.value.trim() }));
-    box.append(note, el("div", { class: "saved", id: "saved-" + e.key }));
-    return box;
+    const b = el("button", { type: "button", class: "btn " + tone, "aria-pressed": String(r[field] === value), text: label });
+    if (!db) b.disabled = true;
+    b.addEventListener("click", () => {
+      const cur = ratings[e.key] || {};
+      setRating(e, { ...cur, [field]: cur[field] === value ? null : value });
+    });
+    return b;
+  }
+
+  function feedback(e) {
+    const r = ratings[e.key] || {};
+    const more = el("details", { class: "more" }, el("summary", { text: "Chấm kỹ hơn" }),
+      el("div", {},
+        el("div", { class: "q" }, el("span", { text: `Điểm ${e.score}/10` }),
+          toggle(e, "score_judgement", "dung", "Đúng", "yes"), toggle(e, "score_judgement", "cao", "Cao quá", "no"),
+          toggle(e, "score_judgement", "thap", "Thấp quá", "mid")),
+        e.card ? el("div", { class: "q" }, el("span", { text: "Nên làm gì" }),
+          toggle(e, "action_ok", "co", "Dùng được", "yes"), toggle(e, "action_ok", "khong", "Sáo rỗng", "no")) : null,
+        (() => {
+          const note = el("input", { class: "note", id: "note-" + e.key, type: "text", maxlength: "300",
+                                     placeholder: "Ghi chú cho AI (không bắt buộc)" });
+          note.value = r.note || "";
+          if (!db) note.disabled = true;
+          note.addEventListener("change", () => setRating(e, { ...(ratings[e.key] || {}), note: note.value.trim() }));
+          return note;
+        })()));
+    return el("div", { class: "actions" },
+      toggle(e, "worth", "dang_doc", "Hữu ích", "yes"), toggle(e, "worth", "khong", "Bỏ qua", "no"),
+      el("span", { class: "spacer" }), toggle(e, "saved", true, r.saved ? "Đã lưu" : "Lưu", "mid"),
+      el("span", { class: "saved-msg", id: "msg-" + e.key }), more);
   }
 
   function card(e) {
     const c = e.card;
-    const top = el("div", { class: "top" },
-      el("span", { class: "chip " + e.category, text: CAT[e.category] || e.category }),
-      el("span", { class: "score", text: `${e.score}/10` }),
-      el("span", { class: "parts", text: `quan trọng ${e.importance} · ảnh hưởng ${e.impact} · độ nóng ${e.hotness}` }),
-      el("span", { class: "goals", text: `${e.source_count} nguồn` }));
-    const node = el("article", { class: "card" + (ratings[e.key]?.worth ? " rated" : ""), id: "card-" + e.key }, top);
+    const node = el("article", { class: "card" + (ratings[e.key]?.worth === "khong" ? " skipped" : ""), id: "card-" + e.key },
+      el("div", { class: "top" },
+        el("span", { class: "chip " + e.category, text: CAT[e.category] || e.category || "" }),
+        e.score != null ? el("span", { class: "score", text: `${e.score}/10` }) : null,
+        e.importance != null ? el("span", { class: "parts", text: `quan trọng ${e.importance} · ảnh hưởng ${e.impact} · độ nóng ${e.hotness}` }) : null,
+        e.fromEarlier ? el("span", { class: "goals", text: "lưu từ " + fmt(e.fromEarlier, { day: "2-digit", month: "2-digit" }) }) : null,
+        e.source_count ? el("span", { class: "goals", text: `${e.source_count} nguồn` }) : null));
     if (c) {
       node.append(el("h2", { text: c.title_vi }));
       node.append(el("ul", { class: "points" }, c.key_points.map((kp) => {
-        const src = c.sources.find((s) => s.id === kp.source_id);
+        const src = (c.sources || []).find((s) => s.id === kp.source_id);
         return el("li", {}, kp.text, src ? el("sup", {}, el("a", { href: src.url, target: "_blank", rel: "noopener", title: src.name, text: `[${src.id}]` })) : null);
       })));
       node.append(el("p", { class: "why" }, el("span", { class: "label", text: "Vì sao quan trọng với bạn: " }), c.why_it_matters));
@@ -185,64 +204,74 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       node.append(el("h2", { text: e.title }));
       if (e.reason) node.append(el("p", { class: "reason", text: "AI chấm: " + e.reason }));
     }
-    node.append(el("details", { class: "src" }, el("summary", { text: `Nguồn (${e.articles.length} bài)` }),
-      el("ol", {}, e.articles.map((a) => el("li", {}, el("a", { href: a.url, target: "_blank", rel: "noopener", text: a.title }), ` — ${a.source}`)))));
-    node.append(rateBox(e));
+    if (e.articles?.length) {
+      node.append(el("details", { class: "src" }, el("summary", { text: `Nguồn (${e.articles.length} bài)` }),
+        el("ol", {}, e.articles.map((a) => el("li", {}, el("a", { href: a.url, target: "_blank", rel: "noopener", text: a.title }), ` — ${a.source}`)))));
+    }
+    node.append(feedback(e));
     return node;
   }
 
   function renderList() {
-    // Giữ nguyên ô ghi chú đang gõ dở khi trang vẽ lại
     const active = document.activeElement;
     const typing = active && active.classList.contains("note") ? { id: active.id, value: active.value } : null;
-    const items = DATA.events.filter((e) =>
-      filter === "all" ? true : filter === "todo" ? !ratings[e.key]?.worth : e.category === filter);
-    $("list").replaceChildren(...(items.length ? items.map(card) : [el("p", { class: "empty", text: "Không còn tin nào trong mục này." })]));
+    const openMore = [...document.querySelectorAll("details.more[open]")].map((d) => d.closest(".card")?.id);
+    const items = filter === "saved" ? savedEvents()
+      : DATA.events.filter((e) => filter === "all" ? true : filter === "todo" ? !ratings[e.key]?.worth : e.category === filter);
+    const empty = filter === "saved" ? "Chưa lưu tin nào. Bấm Lưu ở cuối thẻ để đọc lại sau." : "Không còn tin nào trong mục này.";
+    $("list").replaceChildren(...(items.length ? items.map(card) : [el("p", { class: "empty", text: empty })]));
+    openMore.forEach((id) => { const d = id && document.querySelector(`#${CSS.escape(id)} details.more`); if (d) d.open = true; });
     if (typing) { const n = $(typing.id); if (n) { n.value = typing.value; n.focus(); } }
-    renderMeta();
   }
 
   function setRating(e, next) {
-    ratings[e.key] = next;
-    const saved = $("saved-" + e.key);
-    if (saved) saved.textContent = "Đang lưu…";
+    ratings[e.key] = { ...ratings[e.key], ...next };
+    const msg = $("msg-" + e.key);
+    if (msg) msg.textContent = "Đang lưu…";
+    const r = ratings[e.key];
     const body = {
-      key: e.key, event_id: e.id, run_at: DATA.generated_at,
-      worth: next.worth || null, score_judgement: next.score_judgement || null,
-      action_ok: next.action_ok || null, note: next.note || "",
-      // Chép kèm thông tin sự kiện để dựng bộ đề chuẩn mà không cần file SQLite
-      event: { title: e.title, title_vi: e.card?.title_vi || null, category: e.category, score: e.score,
+      key: e.key, event_id: e.id, run_at: r.run_at || DATA.generated_at,
+      worth: r.worth || null, score_judgement: r.score_judgement || null, action_ok: r.action_ok || null,
+      note: r.note || "", saved: !!r.saved,
+      // Ảnh chụp sự kiện: để dựng bộ đề chuẩn và hiện lại tin đã lưu sau khi bản tin đổi ngày
+      event: r.event || { title: e.title, title_vi: e.card?.title_vi || null, category: e.category, score: e.score,
                importance: e.importance, impact: e.impact, hotness: e.hotness, source_count: e.source_count,
-               summary: e.summary || "", articles: e.articles.slice(0, 4) },
+               summary: e.summary || "", articles: (e.articles || []).slice(0, 4), card: e.card || null },
       rated_at: new Date().toISOString(),
     };
+    ratings[e.key].event = body.event;
+    ratings[e.key].run_at = body.run_at;
     chains[e.key] = (chains[e.key] || Promise.resolve())
       .then(() => db.doc("ratings/" + e.key).set(body))
-      .then(() => { const s = $("saved-" + e.key); if (s) s.textContent = "Đã lưu"; },
-            (err) => { const s = $("saved-" + e.key); if (s) s.textContent = "Chưa lưu được: " + (err?.code || "lỗi") + ". Bấm lại sau ít phút."; });
+      .then(() => { const m = $("msg-" + e.key); if (m) m.textContent = "Đã lưu"; },
+            (err) => { const m = $("msg-" + e.key); if (m) m.textContent = "Chưa lưu được (" + (err?.code || "lỗi") + "), bấm lại sau."; });
+    renderTabs();
     renderList();
   }
 
+  renderHead();
   renderTabs();
   renderList();
 
   (async () => {
     try { db = await window.claude?.use?.("db"); } catch { db = null; }
     if (!db) {
-      setStatus("Chế độ xem này không lưu được phiếu chấm. Hãy mở trang trên claude.ai khi đã đăng nhập.", true);
+      setStatus("Chế độ xem này không lưu được phản hồi. Hãy mở trang trên claude.ai khi đã đăng nhập.", true);
       return;
     }
-    setStatus("Đang tải phiếu chấm đã lưu…");
-    const timer = setTimeout(() => setStatus("Chưa tải được phiếu chấm cũ. Bạn vẫn chấm được, phiếu sẽ lưu khi kết nối lại.", true), 10000);
+    setStatus("Đang tải phản hồi đã lưu…");
+    const timer = setTimeout(() => setStatus("Chưa tải được phản hồi cũ. Bạn vẫn bấm được, phản hồi sẽ lưu khi kết nối lại.", true), 10000);
     db.collection("ratings").onSnapshot((snap) => {
-      if (!snap.metadata.fromCache) { clearTimeout(timer); setStatus("Phiếu chấm tự lưu khi bạn bấm."); }
+      if (!snap.metadata.fromCache) { clearTimeout(timer); setStatus("Bấm Hữu ích hoặc Bỏ qua để bản tin sau chấm sát ý bạn hơn. Bấm là tự lưu."); }
       snap.docs.forEach((d) => {
         if (chains[d.id]) return;  // phiếu đang ghi dở ở trang này thì giữ bản trên trang
         const v = d.data();
-        ratings[d.id] = { worth: v.worth, score_judgement: v.score_judgement, action_ok: v.action_ok, note: v.note };
+        ratings[d.id] = { worth: v.worth, score_judgement: v.score_judgement, action_ok: v.action_ok, note: v.note,
+                          saved: v.saved, event: v.event, event_id: v.event_id, run_at: v.run_at };
       });
+      renderTabs();
       renderList();
-    }, (err) => { clearTimeout(timer); setStatus("Mất kết nối kho phiếu chấm (" + err.code + "). Tải lại trang để thử lại.", true); });
+    }, (err) => { clearTimeout(timer); setStatus("Mất kết nối kho phản hồi (" + err.code + "). Tải lại trang để thử lại.", true); });
   })();
 })();
 </script>

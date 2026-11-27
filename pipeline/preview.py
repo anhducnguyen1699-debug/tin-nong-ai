@@ -1,4 +1,4 @@
-"""Xuất trang xem thử "Bàn chấm tin" từ dữ liệu SQLite.
+"""Xuất trang "Bản tin nóng" từ dữ liệu SQLite.
 
 Trang này được đăng lên claude.ai (riêng tư) để đọc trên điện thoại và chấm từng tin.
 Phiếu chấm lưu trong kho dữ liệu của trang, Claude đọc lại rồi nhập bằng `python -m pipeline.ratings`.
@@ -18,7 +18,7 @@ def event_key(event) -> str:
     return f"e{event['id']}-{stamp}"
 
 
-def build_data(conn, settings: dict, since_hours: int = 24) -> dict:
+def build_data(conn, settings: dict, since_hours: int = 24, byline: str = "") -> dict:
     show_min = settings["scoring"]["show_min"]
     events = []
     for e in db.events_for_preview(conn, since_hours, show_min):
@@ -44,6 +44,7 @@ def build_data(conn, settings: dict, since_hours: int = 24) -> dict:
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "show_min": show_min,
+        "byline": byline,
         "run_cost_usd": cost,
         "events": events,
     }
@@ -54,7 +55,7 @@ def render(data: dict) -> str:
     return TEMPLATE.read_text(encoding="utf-8").replace("__DATA__", payload)
 
 
-def write_preview(conn, settings: dict, out_path: Path) -> Path:
+def write_preview(conn, settings: dict, out_path: Path, byline: str = "") -> Path:
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(render(build_data(conn, settings)), encoding="utf-8")
+    out_path.write_text(render(build_data(conn, settings, byline=byline)), encoding="utf-8")
     return out_path
