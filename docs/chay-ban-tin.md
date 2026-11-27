@@ -5,6 +5,7 @@ Tài liệu này dành cho phiên Claude chạy tự động lúc 6h12 sáng (gi
 Trang đọc tin: https://claude.ai/artifact/M9tBfkKnfHdPBSLd53T91E
 
 ## 0. Chuẩn bị (khoảng 1 phút)
+Kho `anhducnguyen1699-debug/tin-nong-ai` được gắn sẵn vào lịch chạy (nguồn của routine), thường nằm ở `/home/user/tin-nong-ai`. Không cần `add_repo`. Mã chạy được trên Python 3.11 trở lên.
 ```bash
 cd /home/user/tin-nong-ai
 python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt

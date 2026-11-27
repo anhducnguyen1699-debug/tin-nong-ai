@@ -54,3 +54,16 @@ def test_parse_summarize_answer():
     assert out["affected_goals"] == ["dau_tu", "nghe_y"] and out["is_investment_related"] is True
     with pytest.raises(ValueError, match="11 dòng"):
         parse_answer("summarize", "\n".join(lines[:5]), "")
+
+
+def test_preference_examples_fall_back_to_golden(tmp_path, monkeypatch):
+    from pipeline import classify as cl
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "golden.json").write_text(json.dumps([
+        {"title": "Tin A", "user_worth": True}, {"title": "Tin B", "user_worth": False},
+        {"title": "Tin C", "title_vi": "Tin C tiếng Việt", "user_worth": True},
+    ]), encoding="utf-8")
+    monkeypatch.setattr(cl, "ROOT", tmp_path)
+    conn = db.connect(tmp_path / "t.db")
+    liked, disliked = cl.preference_examples(conn)
+    assert liked == ["Tin C tiếng Việt", "Tin A"] and disliked == ["Tin B"]

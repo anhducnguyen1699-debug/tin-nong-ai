@@ -90,7 +90,8 @@ class HandLLM:
 
     def parse(self, step, system, user, output_format, max_tokens):
         import hashlib, json
-        name = f"{step}-{hashlib.sha1(user.split("<bai_moi>")[-1].encode()).hexdigest()[:8]}"
+        key_text = user.split("<bai_moi>")[-1]  # bước gộp: chỉ băm danh sách bài mới, vì danh sách sự kiện đổi thứ tự mỗi lần
+        name = f"{step}-{hashlib.sha1(key_text.encode()).hexdigest()[:8]}"
         answer = self.folder / f"{name}.answer.json"
         if answer.exists():
             return output_format.model_validate_json(answer.read_text(encoding="utf-8"))

@@ -1,10 +1,11 @@
 """Bước chấm điểm: Haiku xếp chuyên mục, chấm mức quan trọng và mức ảnh hưởng cho từng bài."""
+import json
 from html import escape
 
 import anthropic
 
 from . import db
-from .config import system_prompt
+from .config import ROOT, system_prompt
 from .llm import LLMError
 from .models import ArticleScore, ClassifyResult
 from .scoring import clamp
@@ -87,9 +88,29 @@ def classify_rows_for_eval(llm, settings: dict, items: list[dict]) -> list[dict 
     return out
 
 
+def golden_examples(per_side: int = 15) -> tuple[list[str], list[str]]:
+    """Ví dụ sở thích lấy từ bộ đề chuẩn (mọi phiếu bạn từng chấm, kể cả của dữ liệu cũ)."""
+    path = ROOT / "tests" / "golden.json"
+    if not path.exists():
+        return [], []
+    items = json.loads(path.read_text(encoding="utf-8"))
+    title = lambda g: g.get("title_vi") or g.get("title") or ""
+    liked = [title(g) for g in reversed(items) if g.get("user_worth")]
+    disliked = [title(g) for g in reversed(items) if g.get("user_worth") is False]
+    return liked[:per_side], disliked[:per_side]
+
+
+def preference_examples(conn, per_side: int = 15) -> tuple[list[str], list[str]]:
+    """Phản hồi mới trong cơ sở dữ liệu đứng trước; thiếu thì bù bằng bộ đề chuẩn, bỏ trùng."""
+    liked, disliked = db.feedback_examples(conn, per_side)
+    g_liked, g_disliked = golden_examples(per_side)
+    fill = lambda a, b: (a + [t for t in b if t and t not in a])[:per_side]
+    return fill(liked, g_liked), fill(disliked, g_disliked)
+
+
 def classify(conn, llm, settings: dict, rows: list) -> tuple[int, list[str]]:
     cfg = settings["classify"]
-    liked, disliked = db.feedback_examples(conn)
+    liked, disliked = preference_examples(conn)
     system = system_prompt("classify")
     scored, errors = 0, []
     for batch in chunks(rows, cfg["batch_size"]):
