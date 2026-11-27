@@ -85,6 +85,18 @@ details.article[open] > summary { border-bottom: 1px solid var(--line); }
 .art ol.srcs { margin: 0; padding-left: 20px; font-size: .84rem; display: grid; gap: 6px; }
 .art ol.srcs a { color: var(--accent); overflow-wrap: anywhere; }
 .art .tag { font: 500 .7rem var(--font-data); color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+.art .verif { font-size: .84rem; border-radius: 8px; padding: 8px 10px; background: var(--good-soft); color: var(--good); margin: 8px 0 0; }
+.art .verif.none { background: var(--bad-soft); color: var(--bad); }
+.art details.evid summary { color: var(--accent); }
+.art ol.claims { margin: 6px 0 0; padding-left: 20px; font-size: .84rem; display: grid; gap: 8px; }
+.art ol.claims blockquote { margin: 3px 0 0; padding: 2px 0 2px 8px; border-left: 2px solid var(--line); color: var(--muted); font-style: italic; overflow-wrap: anywhere; }
+.art ol.claims .v { font: 500 .7rem var(--font-data); border-radius: 4px; padding: 0 4px; margin-right: 4px; }
+.art ol.claims .v.khop { background: var(--good-soft); color: var(--good); }
+.art ol.claims .v.nhan_dinh { background: var(--accent-soft); color: var(--accent); }
+.art .check { border-top: 1px dashed var(--line); padding-top: 10px; display: grid; gap: 6px; }
+.art .check .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.art .check textarea { width: 100%; min-height: 64px; font: .86rem var(--font-body); color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
 .empty { color: var(--muted); text-align: center; padding: 32px 0; }
 button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
@@ -225,10 +237,47 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
     });
   }
 
-  function articleBox(a) {
+  // Dòng kiểm chứng: bao nhiêu câu có dữ kiện đã được tác tử thứ hai đối chiếu và máy soát lại đoạn trích
+  function verifLine(v) {
+    if (!v) return el("p", { class: "verif none", text: "Bài này viết trước khi có bước kiểm chứng: chưa đối chiếu từng câu với nguồn." });
+    const weak = v.weak ? ` · ${v.weak} câu chỉ dựa vào bản tóm tắt` : "";
+    return el("p", { class: "verif", text: `Kiểm chứng: ${v.ok}/${v.checked} câu có dữ kiện đều có bằng chứng trong nguồn` +
+      ` · lần viết đầu khớp ${v.first_ok}/${v.first_checked}` + (v.rounds > 1 ? ` · sửa ${v.rounds - 1} vòng` : "") + weak });
+  }
+
+  function evidenceList(v, sources) {
+    if (!v?.items?.length) return null;
+    const byId = new Map((sources || []).map((s) => [s.id, s]));
+    return el("details", { class: "evid" }, el("summary", { text: `Bằng chứng từng câu (${v.items.length} câu)` }),
+      el("ol", { class: "claims" }, v.items.map((c) => el("li", {},
+        el("span", { class: "v " + c.verdict, text: c.verdict === "khop" ? "khớp" : "nhận định" }),
+        withCites(c.text, sources),
+        (c.evidence || []).map((ev) => {
+          const s = byId.get(ev.source);
+          return el("blockquote", {}, `“${ev.text}” — `,
+            s ? el("a", { href: s.url, target: "_blank", rel: "noopener", text: `[${ev.source}] ${s.name}` }) : `[${ev.source}]`);
+        })))));
+  }
+
+  // Bạn tự đối chiếu bài với nguồn: kết quả dùng để đo tỷ lệ sai sót còn lọt qua máy
+  function checkBox(e) {
+    const r = ratings[e.key] || {};
+    const area = el("textarea", { id: "err-" + e.key, maxlength: "2000", placeholder: "Câu sai, mỗi câu một dòng (chép câu hoặc ghi số mục)" });
+    area.value = r.article_errors || "";
+    area.hidden = r.article_check !== "loi";
+    if (!db) area.disabled = true;
+    area.addEventListener("change", () => setRating(e, { ...(ratings[e.key] || {}), article_errors: area.value.trim() }));
+    return el("div", { class: "check" },
+      el("div", { class: "row" }, el("span", { class: "goals", text: "Đối chiếu bài này với nguồn:" }),
+        toggle(e, "article_check", "dung", "Đúng hết", "yes"), toggle(e, "article_check", "loi", "Có lỗi", "no")),
+      area);
+  }
+
+  function articleBox(a, e) {
     return el("details", { class: "article" },
       el("summary", { text: `Đọc bài phân tích (${a.words} từ · ${a.sources.length} nguồn)` }),
       el("div", { class: "art" },
+        verifLine(a.verification),
         el("p", { class: "sapo" }, withCites(a.sapo, a.sources)),
         a.sections.map((s) => [el("h3", { text: s.heading }), richText(s.body, a.sources)]),
         el("h3", { text: "Nguồn" }),
@@ -236,7 +285,9 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
           el("a", { href: s.url, target: "_blank", rel: "noopener", text: s.name }),
           el("span", { class: "tag", text: s.kind === "goc" ? "nguồn gốc" : "báo" }),
           el("span", { class: "tag", text: s.full ? "đọc toàn văn" : "chỉ tiêu đề" }),
-          s.note ? ` ${s.note}` : null)))));
+          s.note ? ` ${s.note}` : null))),
+        evidenceList(a.verification, a.sources),
+        e ? checkBox(e) : null));
   }
 
   function card(e) {
@@ -258,10 +309,10 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       node.append(el("p", { class: "todo" }, el("span", { class: "label", text: "Nên làm gì: " }), c.what_to_do));
       if (c.affected_goals?.length) node.append(el("div", { class: "goals", text: "Ảnh hưởng: " + c.affected_goals.map((g) => GOAL[g] || g).join(", ") }));
       if (c.disclaimer) node.append(el("p", { class: "disc", text: c.disclaimer }));
-      if (e.article) node.append(articleBox(e.article));
+      if (e.article) node.append(articleBox(e.article, e));
     } else if (e.article) {
       node.append(el("h2", { text: e.article.title }));
-      node.append(articleBox(e.article));
+      node.append(articleBox(e.article, e));
     } else {
       node.append(el("h2", { text: e.title }));
       if (e.reason) node.append(el("p", { class: "reason", text: "AI chấm: " + e.reason }));
@@ -276,13 +327,17 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
 
   function renderList() {
     const active = document.activeElement;
-    const typing = active && active.classList.contains("note") ? { id: active.id, value: active.value } : null;
+    const typing = active && (active.classList.contains("note") || active.tagName === "TEXTAREA") ? { id: active.id, value: active.value } : null;
     const openMore = [...document.querySelectorAll("details.more[open]")].map((d) => d.closest(".card")?.id);
+    const openArt = [...document.querySelectorAll("details.article[open]")].map((d) => d.closest(".card")?.id);
+    const openEvid = [...document.querySelectorAll("details.evid[open]")].map((d) => d.closest(".card")?.id);
     const items = filter === "saved" ? savedEvents()
       : DATA.events.filter((e) => filter === "all" ? true : filter === "todo" ? !ratings[e.key]?.worth : e.category === filter);
     const empty = filter === "saved" ? "Chưa lưu tin nào. Bấm Lưu ở cuối thẻ để đọc lại sau." : "Không còn tin nào trong mục này.";
     $("list").replaceChildren(...(items.length ? items.map(card) : [el("p", { class: "empty", text: empty })]));
     openMore.forEach((id) => { const d = id && document.querySelector(`#${CSS.escape(id)} details.more`); if (d) d.open = true; });
+    openArt.forEach((id) => { const d = id && document.querySelector(`#${CSS.escape(id)} details.article`); if (d) d.open = true; });
+    openEvid.forEach((id) => { const d = id && document.querySelector(`#${CSS.escape(id)} details.evid`); if (d) d.open = true; });
     if (typing) { const n = $(typing.id); if (n) { n.value = typing.value; n.focus(); } }
   }
 
@@ -295,6 +350,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
       key: e.key, event_id: e.id, run_at: r.run_at || DATA.generated_at,
       worth: r.worth || null, score_judgement: r.score_judgement || null, action_ok: r.action_ok || null,
       note: r.note || "", saved: !!r.saved,
+      article_check: r.article_check || null, article_errors: r.article_errors || "",
       // Ảnh chụp sự kiện: để dựng bộ đề chuẩn và hiện lại tin đã lưu sau khi bản tin đổi ngày
       event: r.event || { title: e.title, title_vi: e.card?.title_vi || null, category: e.category, score: e.score,
                importance: e.importance, impact: e.impact, hotness: e.hotness, source_count: e.source_count,
@@ -330,7 +386,8 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px 
         if (chains[d.id]) return;  // phiếu đang ghi dở ở trang này thì giữ bản trên trang
         const v = d.data();
         ratings[d.id] = { worth: v.worth, score_judgement: v.score_judgement, action_ok: v.action_ok, note: v.note,
-                          saved: v.saved, event: v.event, event_id: v.event_id, run_at: v.run_at };
+                          saved: v.saved, event: v.event, event_id: v.event_id, run_at: v.run_at,
+                          article_check: v.article_check, article_errors: v.article_errors };
       });
       renderTabs();
       renderList();

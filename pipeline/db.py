@@ -80,6 +80,18 @@ CREATE TABLE IF NOT EXISTS feedback (
     at TEXT NOT NULL,
     UNIQUE(event_id)
 );
+
+-- Bạn tự đối chiếu bài phân tích với nguồn (nút "Đối chiếu bài này" trên trang)
+CREATE TABLE IF NOT EXISTS article_checks (
+    id INTEGER PRIMARY KEY,
+    event_key TEXT UNIQUE NOT NULL,
+    title TEXT,
+    verdict TEXT NOT NULL,          -- dung | loi
+    wrong_count INTEGER DEFAULT 0,  -- số câu bạn thấy sai
+    claims_total INTEGER,           -- số câu có dữ kiện trong bài lúc bạn đối chiếu
+    errors_text TEXT,
+    checked_at TEXT NOT NULL
+);
 """
 
 

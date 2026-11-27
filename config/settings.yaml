@@ -61,3 +61,6 @@ deep:                            # bài phân tích sâu do Claude trong phiên 
   max_per_run: 12                # chặn trên phòng ngày quá nhiều tin; tin điểm cao làm trước
   rewrite_after_hours: 20
   rewrite_new_sources: 2
+  max_fix_rounds: 2              # sau 2 vòng sửa mà còn câu không có bằng chứng thì bỏ bài
+  evidence_max_words: 30         # đoạn trích bằng chứng lưu kèm mỗi câu
+  evidence_min_ratio: 90         # độ giống tối thiểu (0-100) giữa đoạn trích và file nguồn

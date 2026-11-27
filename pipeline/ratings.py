@@ -88,6 +88,30 @@ def import_ratings(ratings: list[dict], conn=None) -> tuple[int, int]:
     return saved, len(golden)
 
 
+def import_article_checks(ratings: list[dict], conn) -> int:
+    """Phiếu "Đối chiếu bài này": bạn so bài phân tích với nguồn và ghi các câu sai (mỗi câu một dòng)."""
+    n = 0
+    for r in ratings:
+        verdict = r.get("article_check")
+        if verdict not in ("dung", "loi"):
+            continue
+        errors = (r.get("article_errors") or "").strip()
+        art = (r.get("event") or {}).get("article") or {}
+        v = art.get("verification") or {}
+        wrong = len([l for l in errors.splitlines() if l.strip()]) if verdict == "loi" else 0
+        conn.execute(
+            """INSERT INTO article_checks (event_key, title, verdict, wrong_count, claims_total, errors_text, checked_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(event_key) DO UPDATE SET verdict=excluded.verdict, wrong_count=excluded.wrong_count,
+                 claims_total=excluded.claims_total, errors_text=excluded.errors_text, checked_at=excluded.checked_at""",
+            (r["key"], art.get("title"), verdict, max(wrong, 1 if verdict == "loi" else 0),
+             v.get("checked"), errors, r.get("rated_at") or ""),
+        )
+        n += 1
+    conn.commit()
+    return n
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="Nhập phiếu chấm từ trang Bàn chấm tin")
     p.add_argument("export", help="File JSON hoặc thư mục phiếu xuất từ kho phiếu chấm")
@@ -96,7 +120,9 @@ def main(argv=None) -> int:
     ratings = load_export(Path(args.export))
     conn = db.connect(args.db) if Path(args.db).exists() else None
     saved, total = import_ratings(ratings, conn)
-    print(f"Đọc {len(ratings)} phiếu. Ghi {saved} phiếu vào bộ nhớ sở thích. Bộ đề chuẩn có {total} tin.")
+    checks = import_article_checks(ratings, conn) if conn is not None else 0
+    print(f"Đọc {len(ratings)} phiếu. Ghi {saved} phiếu vào bộ nhớ sở thích. Bộ đề chuẩn có {total} tin. "
+          f"{checks} phiếu đối chiếu bài phân tích.")
     return 0
 
 

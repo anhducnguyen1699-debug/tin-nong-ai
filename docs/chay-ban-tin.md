@@ -12,7 +12,7 @@ python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt
 ```
 
 ## 1. Nạp phản hồi của người đọc
-Dùng công cụ `ArtifactData`: `action: "list"`, `url` là trang đọc tin ở trên, `collection: "ratings"`, `query: {"limit": 1000}`, `out_dir: "/tmp/phan-hoi"`. Sau đó:
+Phiếu gồm cả nút Hữu ích/Bỏ qua và nút "Đối chiếu bài này". Dùng công cụ `ArtifactData`: `action: "list"`, `url` là trang đọc tin ở trên, `collection: "ratings"`, `query: {"limit": 1000}`, `out_dir: "/tmp/phan-hoi"`. Sau đó:
 ```bash
 .venv/bin/python -m pipeline.ratings /tmp/phan-hoi/ratings --db data/tin.db
 ```
@@ -45,25 +45,34 @@ Lưu ý:
 - **Viết thẻ:** chỉ dựa vào nguồn được đưa. "Nên làm gì" luôn phải có việc cụ thể (mốc ngày, chỉ số, tài liệu); không bao giờ chỉ viết "chỉ cần nắm thông tin". Không khuyên mua bán mã cụ thể.
 - Nếu `answer` báo sai khuôn thì sửa và gửi lại. Không sửa mã nguồn trong lượt chạy hằng ngày.
 
-## 3b. Viết bài phân tích sâu cho tin từ 7 điểm
-Đọc kỹ `pipeline/prompts/deep.md` trước. Sau đó:
+## 3b. Viết bài phân tích sâu cho tin từ 7 điểm (có kiểm chứng từng câu)
+Đọc kỹ `pipeline/prompts/deep.md` và `pipeline/prompts/verify.md` trước. Sau đó:
 ```bash
 .venv/bin/python -m pipeline.deep list
 ```
 Làm lần lượt từng sự kiện, điểm cao trước:
-1. Đọc toàn văn từng bài báo bằng WebFetch. Đường dẫn `news.google.com` thì dùng WebSearch tìm bài gốc theo tiêu đề cộng tên báo.
-2. Tìm thêm 1–3 nguồn gốc bằng WebSearch: thông cáo, văn bản, nghiên cứu, số liệu chính thức.
-3. Viết bài theo khuôn, rồi ghi:
+1. **Lưu nguyên văn nguồn:** `.venv/bin/python -m pipeline.deep fetch <mã> <url>` cho từng bài báo và từng nguồn gốc, rồi đọc file đã lưu bằng Read. Đường dẫn `news.google.com` thì dùng WebSearch tìm bài gốc theo tiêu đề cộng tên báo. Chỉ khi `fetch` không được mới dùng WebFetch và lưu bằng `deep save <mã> <url>`.
+2. **Gửi bản nháp:**
    ```bash
-   .venv/bin/python -m pipeline.deep write <mã> <<'EOF'
+   .venv/bin/python -m pipeline.deep draft <mã> <<'EOF'
    ...bài...
    EOF
    ```
-   Lệnh báo `CHƯA LƯU` thì sửa theo lỗi rồi ghi lại.
+   Lệnh báo `CHƯA NHẬN` thì sửa theo lỗi rồi gửi lại.
+3. **Đối chiếu:** giao đề mà lệnh `draft` in ra cho một tác tử mới bằng công cụ Agent, chọn mô hình `sonnet`. Lời giao: "Đọc pipeline/prompts/verify.md rồi làm đề <đường dẫn đề>. Chỉ in các dòng kết quả." Ghi kết quả:
+   ```bash
+   .venv/bin/python -m pipeline.deep verify <mã> <<'EOF'
+   ...kết quả của tác tử...
+   EOF
+   ```
+   Không tự viết kết quả thay tác tử.
+4. **Sửa:** còn câu `lệch`, `không thấy` hoặc `sai nguồn` thì sửa theo bằng chứng hoặc xóa câu, rồi quay lại bước 2. Tối đa 2 vòng sửa. Lệnh `draft` báo `DỪNG` thì bỏ sự kiện đó.
+5. **Lưu:** `.venv/bin/python -m pipeline.deep write <mã>`. Ghi lại tỷ lệ "lần viết đầu khớp" mà lệnh in ra.
 
 Mạng chỉ mở cho một số trang. Ngoài các trang RSS, hiện đọc được toàn văn ở: `www.reuters.com`, `apnews.com`, `www.axios.com`, `www.npr.org`, `www.federalreserve.gov`, `www.newyorkfed.org`, `www.bls.gov`, `www.bea.gov`, `ustr.gov`, `www.fda.gov`, `pubmed.ncbi.nlm.nih.gov`, `www.nejm.org`, `jamanetwork.com`, `www.nature.com`, `tuoitre.vn`, `thanhnien.vn`, `vietnamnet.vn`, `baochinhphu.vn`, `www.sbv.gov.vn`, `moit.gov.vn`.
 - Trang bị chặn: tìm bài khác đưa cùng tin trên các trang mở được.
-- Sự kiện nào thử hết mà vẫn chưa đủ 3 nguồn đọc toàn văn thì **bỏ qua**, không viết từ tóm tắt tìm kiếm, và ghi tên sự kiện đó vào báo cáo.
+- Sự kiện nào thử hết mà vẫn chưa đủ 3 nguồn đã lưu toàn văn thì **bỏ qua**, không viết từ tóm tắt tìm kiếm, và ghi tên sự kiện đó vào báo cáo.
+- Thư mục `data/nguon/` chứa bài báo có bản quyền: **không** `git add` thư mục này.
 
 Làm xong mọi sự kiện thì xuất lại trang:
 ```bash
@@ -84,6 +93,7 @@ git push origin main
 ## 6. Báo cáo
 Viết báo cáo bằng tiếng Việt, dưới 120 từ, gồm:
 - số bài thu thập, số bài đã chấm, số sự kiện, số thẻ;
-- số bài phân tích đã viết, tổng số nguồn đã đọc toàn văn, các sự kiện bị bỏ qua vì không đọc được nguồn;
+- số bài phân tích đã viết, tổng số nguồn đã đọc toàn văn, các sự kiện bị bỏ qua (không đọc được nguồn, hoặc không kiểm chứng được sau 2 vòng sửa);
+- tỷ lệ câu khớp ngay lần viết đầu, cộng dồn mọi bài hôm nay (ví dụ "lần viết đầu khớp 152/160 câu = 95%");
 - 3 tin lớn nhất;
 - các lỗi nếu có.

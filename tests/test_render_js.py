@@ -24,7 +24,11 @@ const { chromium } = require('playwright');
              stars: art.textContent.includes('**'),
              cites: art.querySelectorAll('a.cite').length,
              headings: [...art.querySelectorAll('h3')].map(h => h.textContent),
-             objectText: art.textContent.includes('[object') };
+             objectText: art.textContent.includes('[object'),
+             verif: art.querySelector('.verif')?.textContent || '',
+             quotes: art.querySelectorAll('ol.claims blockquote').length,
+             quoteLink: art.querySelector('ol.claims blockquote a')?.textContent || '',
+             checkButtons: [...art.querySelectorAll('.check button')].map(b => b.textContent) };
   });
   console.log(JSON.stringify({ ...r, errs })); await b.close();
 })();
@@ -47,7 +51,14 @@ def test_article_renders_bold_citations_and_sections(tmp_path):
     conn.execute("UPDATE events SET score=8.0, source_count=1 WHERE id=?", (eid,))
     conn.commit()
     text = make_article(170).replace("Đây là câu phân tích mẫu", "**Vàng.** Giá giảm [2]. Đây là câu phân tích mẫu", 1)
-    db.save_article(conn, eid, parse_article(text, settings), 1)
+    article = parse_article(text, settings)
+    article["verification"] = {"claims": 2, "checked": 1, "ok": 1, "opinion": 1, "pending": 0, "weak": 0,
+                               "first_checked": 2, "first_ok": 1, "rounds": 2, "items": [
+                                   {"n": 1, "section": "Sapo", "text": "Giá giảm [2].", "cites": [2], "verdict": "khop",
+                                    "weak": False, "evidence": [{"source": 2, "text": "prices fell sharply on Monday"}]},
+                                   {"n": 2, "section": "Bối cảnh", "text": "Nhiều khả năng còn giảm.", "cites": [],
+                                    "verdict": "nhan_dinh", "weak": False, "evidence": []}]}
+    db.save_article(conn, eid, article, 1)
     page = tmp_path / "p.html"
     page.write_text("<!doctype html><html><head><meta charset=utf8></head><body>" + render(build_data(conn, settings))
                     + "</body></html>", encoding="utf-8")
@@ -56,3 +67,6 @@ def test_article_renders_bold_citations_and_sections(tmp_path):
     assert r["errs"] == [] and not r["objectText"] and not r["stars"]
     assert r["strong"] == ["Vàng."] and r["cites"] > 6
     assert r["headings"][0] == "Chuyện gì đã xảy ra" and r["headings"][-1] == "Nguồn"
+    assert "1/1 câu" in r["verif"] and "lần viết đầu khớp 1/2" in r["verif"] and "sửa 1 vòng" in r["verif"]
+    assert r["quotes"] == 1 and r["quoteLink"] == "[2] AP"
+    assert r["checkButtons"] == ["Đúng hết", "Có lỗi"]

@@ -2,6 +2,7 @@
 
   python -m pipeline.eval --offline   # dùng điểm AI đã chấm lúc chạy (miễn phí)
   python -m pipeline.eval             # chấm lại bằng câu lệnh hiện tại (tốn vài xu) — dùng sau mỗi lần sửa câu lệnh
+  python -m pipeline.eval --articles  # độ chính xác của bài phân tích (máy đối chiếu + bạn đối chiếu tay)
 
 Tiêu chí đạt: khớp "đáng đọc hay không" từ 75% trở lên, và từ 2/3 số thẻ có "Nên làm gì" dùng được.
 """
@@ -40,13 +41,54 @@ def action_rate(golden: list[dict]) -> tuple[int, float]:
     return len(rated), (ok / len(rated) if rated else 0.0)
 
 
+def article_accuracy(conn) -> dict:
+    """(a) câu khớp ngay lần viết đầu, (b) câu khớp khi đăng, (c) câu đúng theo bạn đối chiếu tay."""
+    a_ok = a_n = b_ok = b_n = arts = weak = 0
+    for row in conn.execute("SELECT article_json FROM events WHERE article_json IS NOT NULL"):
+        v = json.loads(row["article_json"]).get("verification")
+        if not v:
+            continue
+        arts += 1
+        a_ok += v["first_ok"]; a_n += v["first_checked"]
+        b_ok += v["ok"]; b_n += v["checked"]
+        weak += v.get("weak", 0)
+    checks = conn.execute("SELECT COUNT(*) n, SUM(wrong_count) w, SUM(claims_total) t, "
+                          "SUM(verdict='loi') bad FROM article_checks").fetchone()
+    c_n = checks["t"] or 0
+    return {
+        "articles": arts, "first_ok": a_ok, "first_n": a_n, "final_ok": b_ok, "final_n": b_n, "weak": weak,
+        "checked_articles": checks["n"] or 0, "articles_with_errors": checks["bad"] or 0,
+        "human_wrong": checks["w"] or 0, "human_claims": c_n,
+    }
+
+
+def print_article_accuracy(r: dict) -> None:
+    pct = lambda a, b: f"{a / b:.1%}" if b else "chưa có"
+    print(f"Bài phân tích đã kiểm chứng: {r['articles']}")
+    print(f"(a) Câu khớp ngay lần viết đầu: {r['first_ok']}/{r['first_n']} = {pct(r['first_ok'], r['first_n'])}"
+          "  ← mức AI viết sai trước khi được sửa")
+    print(f"(b) Câu khớp khi đăng:          {r['final_ok']}/{r['final_n']} = {pct(r['final_ok'], r['final_n'])}"
+          + (f"  ({r['weak']} câu chỉ dựa vào bản tóm tắt WebFetch)" if r["weak"] else ""))
+    right = r["human_claims"] - r["human_wrong"]
+    print(f"(c) Bạn đối chiếu tay {r['checked_articles']} bài ({r['articles_with_errors']} bài có lỗi): "
+          f"{right}/{r['human_claims']} câu đúng = {pct(right, r['human_claims'])}  ← sai sót lọt qua cả máy")
+    if r["checked_articles"] < 10:
+        print("   Cần khoảng 10 bài đối chiếu tay thì con số (c) mới đáng tin.")
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="Đo độ khớp giữa AI và bạn")
     p.add_argument("--offline", action="store_true", help="Không gọi AI, dùng điểm đã lưu")
+    p.add_argument("--articles", action="store_true", help="Đo độ chính xác của bài phân tích")
+    p.add_argument("--db", default=None, help="File dữ liệu (mặc định data/tin.db)")
     p.add_argument("--threshold", type=float, default=None, help="Ngưỡng 'đáng đọc' (mặc định = summarize_min)")
     args = p.parse_args(argv)
 
     settings = load_settings()
+    if args.articles:
+        from .main import DEFAULT_DB
+        print_article_accuracy(article_accuracy(db.connect(args.db or DEFAULT_DB)))
+        return 0
     threshold = args.threshold or settings["scoring"]["summarize_min"]
     if not GOLDEN.exists():
         print("Chưa có tests/golden.json. Chấm tin ở trang Bàn chấm tin rồi chạy pipeline.ratings trước.")
