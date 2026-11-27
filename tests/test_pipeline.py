@@ -133,6 +133,15 @@ def test_pick_sources_prefers_distinct_outlets():
     assert [r["source"] for r in pick_sources(rows, 4)] == ["BBC", "CNBC"]
 
 
+def test_pick_sources_puts_title_only_google_news_last():
+    rows = [
+        {"source": "AP News", "importance": 9, "summary": "", "origin": "google_news"},
+        {"source": "CafeF", "importance": 7, "summary": "Mô tả dài", "origin": "rss"},
+        {"source": "BBC", "importance": 8, "summary": "", "origin": "rss"},
+    ]
+    assert [r["source"] for r in pick_sources(rows, 4)] == ["CafeF", "BBC", "AP News"]
+
+
 def test_budget_guard_blocks_summaries_but_not_classify(conn):
     settings = load_settings()
     db.record_llm_call(conn, None, "summarize", "claude-haiku-5-5", 0, 0, 50.0)
@@ -140,3 +149,23 @@ def test_budget_guard_blocks_summaries_but_not_classify(conn):
     llm.check_budget("classify")  # vẫn được chạy
     with pytest.raises(BudgetExceeded):
         llm.check_budget("summarize")
+
+
+def test_cluster_recomputes_scores_even_when_interrupted(conn):  # noqa: F811
+    settings = load_settings()
+    classify(conn, FakeLLM(), settings, db.unscored_articles(conn, 36))
+
+    class Stops(FakeLLM):
+        calls_left = 1
+
+        def parse(self, step, *a, **kw):
+            if step == "cluster" and self.calls_left == 0:
+                raise RuntimeError("dừng giữa chừng")
+            self.calls_left -= 1
+            return super().parse(step, *a, **kw)
+
+    settings = {**settings, "cluster": {**settings["cluster"], "batch_size": 2}}
+    with pytest.raises(RuntimeError):
+        cluster(conn, Stops(), settings)
+    scored = conn.execute("SELECT COUNT(*) FROM events WHERE score > 0").fetchone()[0]
+    assert scored >= 1  # lô đầu đã gộp xong thì sự kiện của nó phải có điểm

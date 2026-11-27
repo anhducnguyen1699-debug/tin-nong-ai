@@ -16,8 +16,13 @@ INVESTMENT_DISCLAIMER = "Không phải lời khuyên đầu tư."
 
 
 def pick_sources(article_rows: list, max_sources: int) -> list:
-    """Ưu tiên mỗi báo một bài, bài quan trọng hơn và có mô tả đứng trước."""
-    ordered = sorted(article_rows, key=lambda r: (int(r["importance"] or 0), bool(r["summary"])), reverse=True)
+    """Ưu tiên mỗi báo một bài. Bài bóc được nội dung (không phải Google News) và có mô tả xếp trước,
+    vì bài Google News chỉ có tiêu đề làm thẻ nghèo thông tin; sau đó mới xét mức quan trọng."""
+    def key(r):
+        origin = r["origin"] if "origin" in r.keys() else ""
+        return (origin not in NO_FULLTEXT_ORIGINS, bool(r["summary"]), int(r["importance"] or 0))
+
+    ordered = sorted(article_rows, key=key, reverse=True)
     picked, seen = [], set()
     for r in ordered:
         if r["source"] not in seen:

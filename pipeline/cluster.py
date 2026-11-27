@@ -68,39 +68,41 @@ def cluster(conn, llm, settings: dict) -> tuple[dict, list[str]]:
     display = {e["id"]: e["title_vi"] or e["title"] for e in events}
     touched: set[int] = set()
 
-    # 1) Gộp sơ bộ: tiêu đề gần như trùng khớp
-    remaining = []
-    for r in rows:
-        eid = best_fuzzy_match(r["title"], event_titles, cfg["fuzzy_merge"])
-        if eid:
-            db.attach(conn, r["id"], eid)
-            event_titles[eid].append(r["title"])
-            touched.add(eid)
-            stats["fuzzy"] += 1
-        else:
-            remaining.append(r)
+    try:
+        # 1) Gộp sơ bộ: tiêu đề gần như trùng khớp
+        remaining = []
+        for r in rows:
+            eid = best_fuzzy_match(r["title"], event_titles, cfg["fuzzy_merge"])
+            if eid:
+                db.attach(conn, r["id"], eid)
+                event_titles[eid].append(r["title"])
+                touched.add(eid)
+                stats["fuzzy"] += 1
+            else:
+                remaining.append(r)
 
-    # 2) Phần còn lại: hỏi AI, mỗi lần một lô
-    system = system_prompt("cluster")
-    for batch in chunks(remaining, cfg["batch_size"]):
-        event_list = list(display.items())[-cfg["max_events_in_prompt"]:]
-        before = len(display)
-        try:
-            result = llm.parse("cluster", system, build_user_message(event_list, batch), ClusterResult, 6000)
-        except (LLMError, anthropic.APIError) as e:
-            errors.append(f"Gộp sự kiện lỗi, tạm để mỗi bài một sự kiện: {e}")
-            result = None
-        new_touched = apply_decisions(conn, batch, result, {eid for eid, _ in event_list})
-        touched |= new_touched
-        stats["ai"] += len(batch)
-        # Sự kiện mới tạo ở lô này được đưa vào danh sách cho lô sau
-        for eid in new_touched:
-            if eid not in display:
-                row = conn.execute("SELECT title FROM events WHERE id=?", (eid,)).fetchone()
-                display[eid] = row["title"]
-        stats["new_events"] += len(display) - before
-
-    for eid in touched:
-        db.recompute_event(conn, eid, weights)
+        # 2) Phần còn lại: hỏi AI, mỗi lần một lô
+        system = system_prompt("cluster")
+        for batch in chunks(remaining, cfg["batch_size"]):
+            event_list = list(display.items())[-cfg["max_events_in_prompt"]:]
+            before = len(display)
+            try:
+                result = llm.parse("cluster", system, build_user_message(event_list, batch), ClusterResult, 6000)
+            except (LLMError, anthropic.APIError) as e:
+                errors.append(f"Gộp sự kiện lỗi, tạm để mỗi bài một sự kiện: {e}")
+                result = None
+            new_touched = apply_decisions(conn, batch, result, {eid for eid, _ in event_list})
+            touched |= new_touched
+            stats["ai"] += len(batch)
+            # Sự kiện mới tạo ở lô này được đưa vào danh sách cho lô sau
+            for eid in new_touched:
+                if eid not in display:
+                    row = conn.execute("SELECT title FROM events WHERE id=?", (eid,)).fetchone()
+                    display[eid] = row["title"]
+            stats["new_events"] += len(display) - before
+    finally:
+        # Luôn tính lại điểm các sự kiện đã gộp, kể cả khi lượt dừng giữa chừng (lỗi, chạy thử chờ câu trả lời)
+        for eid in touched:
+            db.recompute_event(conn, eid, weights)
     stats["events_touched"] = len(touched)
     return stats, errors

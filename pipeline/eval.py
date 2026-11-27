@@ -16,7 +16,7 @@ from .classify import classify_rows_for_eval
 from .config import load_settings
 from .llm import LLM
 from .ratings import GOLDEN
-from .scoring import final_score
+from .scoring import effective_hotness, final_score
 
 PASS_AGREEMENT = 0.75
 PASS_ACTION = 2 / 3
@@ -54,8 +54,16 @@ def main(argv=None) -> int:
     golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
 
     if args.offline:
-        scores = [g.get("ai_score") for g in golden]
-        label = "điểm lúc chạy"
+        # Giữ nguyên điểm AI đã chấm (quan trọng, ảnh hưởng), nhưng tính lại điểm cuối theo công thức hiện tại
+        weights = settings["scoring"]["weights"]
+        scores = []
+        for g in golden:
+            if g.get("ai_importance") is None or g.get("ai_impact") is None:
+                scores.append(g.get("ai_score"))
+                continue
+            hot = effective_hotness(g.get("hotness", 0) or 0, g["ai_impact"])
+            scores.append(final_score(g["ai_importance"], g["ai_impact"], hot, weights))
+        label = "điểm AI lúc chạy, công thức hiện tại"
     else:
         conn = db.connect(Path(tempfile.mkdtemp()) / "eval.db")
         llm = LLM(settings, conn)
@@ -67,7 +75,8 @@ def main(argv=None) -> int:
                 scores.append(None)
                 continue
             impact = max(s["impact_dau_tu"], s["impact_nghe_y"], s["impact_dia_chinh_tri"], s["impact_viet_nam"])
-            scores.append(final_score(s["importance"], impact, g.get("hotness", 0), weights))
+            hot = effective_hotness(g.get("hotness", 0) or 0, impact)
+            scores.append(final_score(s["importance"], impact, hot, weights))
         label = f"chấm lại bằng câu lệnh hiện tại, chi phí {llm.run_cost:.4f} USD"
 
     a = agreement(golden, scores, threshold)

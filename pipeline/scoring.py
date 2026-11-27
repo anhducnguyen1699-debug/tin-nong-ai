@@ -24,6 +24,16 @@ def hotness(source_count: int, max_hn_points: int = 0, max_reddit_score: int = 0
     return round(max(by_sources, by_hn, by_reddit), 1)
 
 
+IMPACT_FLOOR_FROM = 8   # tin ảnh hưởng mạnh tới mục tiêu (≥ 8)...
+HOT_FLOOR = 5.0         # ...thì độ nóng tính tối thiểu 5, để tin chuyên ngành ít báo đưa không bị chìm
+
+
+def effective_hotness(hot: float, impact: float) -> float:
+    """Độ nóng dùng để tính điểm. Tin y khoa hay đầu tư rất sát mục tiêu thường chỉ có 1 nguồn;
+    không để việc ít báo đưa kéo điểm của chúng xuống dưới ngưỡng viết thẻ."""
+    return max(hot, HOT_FLOOR) if impact >= IMPACT_FLOOR_FROM else hot
+
+
 def final_score(importance: float, impact: float, hot: float, weights: dict) -> float:
     score = (
         weights.get("importance", 0.5) * importance
@@ -56,7 +66,7 @@ def event_aggregate(article_rows: list, weights: dict) -> dict:
         "importance": importance,
         "impact": impact,
         "hotness": hot,
-        "score": final_score(importance, impact, hot, weights),
+        "score": final_score(importance, impact, effective_hotness(hot, impact), weights),
         "source_count": len(sources),
         "category": top["category"],
     }

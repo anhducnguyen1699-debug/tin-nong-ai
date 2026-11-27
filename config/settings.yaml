@@ -24,7 +24,7 @@ budget:
 scoring:
   weights: {importance: 0.5, impact: 0.3, hotness: 0.2}
   show_min: 5.0                  # dưới mức này không hiện trên trang
-  summarize_min: 7.0             # từ mức này trở lên mới viết thẻ đầy đủ
+  summarize_min: 6.5             # từ mức này trở lên mới viết thẻ đầy đủ (hạ từ 7,0 theo phiếu chấm 27/11)
   max_summaries_per_run: 15
 
 classify:

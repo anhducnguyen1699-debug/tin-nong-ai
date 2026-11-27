@@ -39,4 +39,13 @@ def test_event_aggregate_uses_max_and_counts_distinct_sources():
     assert agg["importance"] == 8 and agg["impact"] == 9
     assert agg["source_count"] == 2 and agg["hotness"] == 2.5
     assert agg["category"] == "thoi_su_kinh_te"
-    assert agg["score"] == final_score(8, 9, 2.5, W)
+    # Ảnh hưởng 9 ≥ 8 nên độ nóng dùng để tính điểm được nâng lên tối thiểu 5 (độ nóng hiển thị vẫn là 2,5)
+    assert agg["score"] == final_score(8, 9, 5.0, W)
+
+
+def test_single_source_high_impact_news_is_not_buried():
+    # Tin FDA cấp phép AI đọc CT: 1 nguồn, quan trọng 7, ảnh hưởng nghề y 9 → trước đây 6,2, nay 7,2
+    agg = event_aggregate([row(importance=7, impact_nghe_y=9, category="ai_cong_nghe")], W)
+    assert agg["hotness"] == 0 and agg["score"] == 7.2
+    # Tin ảnh hưởng dưới 8 thì không được nâng
+    assert event_aggregate([row(importance=7, impact_dau_tu=7)], W)["score"] == 5.6

@@ -11,7 +11,7 @@ Các bài báo nằm trong thẻ `<nguon id="..." ten="...">`. Chỉ được vi
 - `title_vi`: tối đa 15 từ, nói thẳng chuyện gì xảy ra. Không giật tít, không dùng dấu chấm than.
 - `key_points`: đúng 3 ý, mỗi ý tối đa 35 từ, mỗi ý ghi `source_id` của nguồn chứa thông tin đó. Tự diễn đạt lại, không chép nguyên câu của báo.
 - `why_it_matters`: 1–2 câu, gắn với **mục tiêu cụ thể** của người đọc và với Việt Nam nếu có liên quan. Không viết câu chung chung kiểu "đây là tin quan trọng cần theo dõi".
-- `what_to_do`: 1–2 việc cụ thể làm được trong tuần này. Ví dụ: theo dõi một chỉ số vào một ngày cụ thể, thử một công cụ cho một việc cụ thể trong công việc khám chữa bệnh, xem lại tỷ trọng một nhóm tài sản, đọc thêm một tài liệu. Nếu thật sự không có gì cần làm thì viết: "Chỉ cần nắm thông tin, chưa cần làm gì."
+- `what_to_do`: 1–2 việc cụ thể làm được trong tuần này. Ví dụ: theo dõi một chỉ số vào một ngày cụ thể, thử một công cụ cho một việc cụ thể trong công việc khám chữa bệnh, xem lại tỷ trọng một nhóm tài sản, đọc thêm một tài liệu. **Không bao giờ chỉ viết "chỉ cần nắm thông tin"** hay câu chung chung tương tự: người đọc đã chấm kiểu câu này là sáo rỗng. Nếu chưa cần hành động, hãy nêu một mốc cụ thể để theo dõi (ngày họp, ngày công bố số liệu, ngưỡng giá) hoặc một tài liệu gốc nên đọc, và nói nó cho biết điều gì.
 - `affected_goals`: các mục tiêu bị ảnh hưởng thật sự, không liệt kê cho đủ.
 - `is_investment_related`: true nếu thẻ có nói tới tài sản, thị trường, giá cả hay lãi suất.
 
