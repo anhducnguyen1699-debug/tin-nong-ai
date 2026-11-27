@@ -51,6 +51,7 @@ Trước hết dùng `Artifact` với `action: "read"` và `url` của trang đ�
 ```bash
 git add data/tin.db tests/golden.json
 git commit -m "Bản tin ngày $(TZ=Asia/Ho_Chi_Minh date +%d/%m)"
+git pull --rebase origin main   # phòng khi trong ngày có thay đổi mã được đẩy lên
 git push origin main
 ```
 

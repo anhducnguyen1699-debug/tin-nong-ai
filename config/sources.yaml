@@ -37,6 +37,10 @@ google_news:
   - {query: "AI healthcare", lang: en}
   - {query: "AI diagnosis FDA", lang: en}
   - {query: "trí tuệ nhân tạo y tế", lang: vi}
+  - {query: "AI critical care sepsis", lang: en}
+  - {query: "AI intensive care unit", lang: en}
+  - {query: "chứng chỉ quỹ", lang: vi}
+  - {query: "quỹ ETF", lang: vi}
   - {query: "Federal Reserve interest rates", lang: en}
   - {query: "tariffs trade war", lang: en}
   - {query: "South China Sea", lang: en}
